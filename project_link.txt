@@ -1,0 +1,10 @@
+for google auth
+https://parlak-deniss.medium.com/fastapi-authentication-with-google-oauth-2-0-9bb93b784eee
+https://prokofyev.ch/implementing-google-login-with-javascript-and-fastapi/
+https://github.com/denizparlak1/fastapi-google-auth/blob/main/api/auth/auth.py
+
+class based fastapi
+https://medium.com/@himanshu.sharma.for.work/step-by-step-guide-to-implementing-oauth-authentication-in-fastapi-8291a3184f46
+
+microservice
+https://snimkar1905.medium.com/building-microservices-with-fastapi-and-rabbitmq-part1-1104dbd4ad96
