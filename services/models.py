@@ -1,73 +1,71 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, TIMESTAMP, LargeBinary
+import uuid
+from sqlalchemy import (
+    Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint
+)
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-from database import Base, create_database
-
-
-class App(Base):
-    __tablename__ = 'apps'
-    __table_args__ = {"schema": "karigor"}
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
-    logo = Column(LargeBinary)  # Store the logo as binary data
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relationship back to Service
-    service = relationship('Service', back_populates='apps')
+Base = declarative_base()
 
 class Service(Base):
     __tablename__ = 'services'
-    __table_args__ = {"schema": "karigor"}
+    __table_args__ = (
+        Index('idx_service_parent_id', 'parent_id'),
+        {"schema": "karigor"}
+    )
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    app_id = Column(Integer, ForeignKey('karigor.apps.id', ondelete='CASCADE'))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='SET NULL'), nullable=True)
     name = Column(String(255), nullable=False)
-    description = Column(Text)
-    logo = Column(LargeBinary)  # Store the path to the logo image (file system or URL)
-    image_path = Column(String(255))
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    level = Column(Integer, nullable=False)
+    is_leaf = Column(Boolean, default=False, server_default='false', nullable=False)
+    created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
+    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationship with Subservice table
-    subservices = relationship('Subservice', back_populates='service')
+    parent = relationship('Service', remote_side=[id], back_populates='children')
+    children = relationship('Service', back_populates='parent', cascade="all, delete-orphan")
 
-    # Relationship with Apps table
-    apps = relationship('App', back_populates='service')
+    logo = relationship('ServiceLogo', back_populates='service', cascade="all, delete-orphan")
+    description = relationship('ServiceDescription', back_populates='service', cascade="all, delete-orphan")
 
-class Subservice(Base):
-    __tablename__ = 'subservices'
+    descendants = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.ancestor_id', back_populates='ancestor', cascade="all, delete-orphan")
+    ancestors = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.descendant_id', back_populates='descendant', cascade="all, delete-orphan")
+
+class ServiceHierarchy(Base):
+    __tablename__ = 'service_hierarchy'
+    __table_args__ = (
+        UniqueConstraint('ancestor_id', 'descendant_id', name='uq_service_hierarchy'),
+        {"schema": "karigor"}
+    )
+
+    ancestor_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    descendant_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    depth = Column(Integer, nullable=False)
+
+    ancestor = relationship('Service', foreign_keys=[ancestor_id], back_populates='descendants')
+    descendant = relationship('Service', foreign_keys=[descendant_id], back_populates='ancestors')
+
+class ServiceLogo(Base):
+    __tablename__ = 'service_logos'
     __table_args__ = {"schema": "karigor"}
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    service_id = Column(Integer, ForeignKey('karigor.services.id', ondelete='CASCADE'))
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
-    logo = Column(LargeBinary)
-    image_path = Column(String(255))  # Store the path to the image (file system or URL)
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    image_url = Column(Text, nullable=True)  # URL for externally stored images
+    logo_data = Column(Text, nullable=True)  # Base64 or binary for database-stored logos
+    created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
+    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    service = relationship('Service', back_populates='subservices')
+    service = relationship('Service', back_populates='logo')
 
-    details = relationship('SubserviceDetail', back_populates='subservice')
-
-
-class SubserviceDetail(Base):
-    __tablename__ = 'subservice_details'
+class ServiceDescription(Base):
+    __tablename__ = 'service_descriptions'
     __table_args__ = {"schema": "karigor"}
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    subservice_id = Column(Integer, ForeignKey('karigor.subservices.id', ondelete='CASCADE'), nullable=False)
-    category = Column(String(255), nullable=False)  # Example: "What We Offer", "Liability"
-    detail = Column(Text, nullable=False)
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    description = Column(Text, nullable=False)  # Store HTML data
+    created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
+    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationship back to Subservice
-    subservice = relationship('Subservice', back_populates='details')
-
-
+    service = relationship('Service', back_populates='description')

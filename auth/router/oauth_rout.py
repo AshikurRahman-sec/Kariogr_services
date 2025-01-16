@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 
 
-import services.oauth_service as services
+import services.custom_oauth_service as services
 import schemas.oauth_schemas as _schemas
 from models.oauth_model import Client, User, AuthorizationCode
 from database import get_db

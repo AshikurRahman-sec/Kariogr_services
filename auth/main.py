@@ -1,15 +1,13 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 
-from models.fastapi_auth_model import *
-from models.google_login_model import *
-from models.oauth_model import *
+from models.auth_model import *
 import database as _database
 
 
 from router.oauth_rout import router as oauth_router
-from router.google_login_rout import router as google_login_router
-from router.fastapi_auth_rout import router as fastapi_auth_router
+from router.firebase_rout import router as firebase_auth_router
+from router.email_auth_rout import router as email_auth_router
 from kafka_producer import kafka_producer_service
 
 
@@ -22,8 +20,9 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content={"status_code": exc.status_code, "detail": exc.detail}
     )
 
-app.include_router(oauth_router, prefix="/api", tags=["OAuth Service"])
-app.include_router(fastapi_auth_router, prefix="/api", tags=["Fastapi Auth"])
+app.include_router(oauth_router, prefix="/api", tags=["Custom OAuth"])
+app.include_router(email_auth_router, prefix="/api", tags=["Email Auth"])
+app.include_router(firebase_auth_router, prefix="/api", tags=["Firebase Auth"])
 
 
 @app.on_event("startup")

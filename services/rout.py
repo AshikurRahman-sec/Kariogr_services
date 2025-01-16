@@ -1,24 +1,105 @@
-from fastapi import HTTPException, APIRouter, Depends, Request
+from fastapi import HTTPException, APIRouter, Depends, Request, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime
+from uuid import UUID
 import pika
 import logging
 
 from database import get_db
 import service as services
-# import schemas as _schemas
+import schemas as _schemas
 # from models import Client, User, AuthorizationCode
 
 logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 
-@router.get("/apps-services")
-async def get_app_service_data(db: Session = Depends(get_db)):
-    
+@router.get("/root-services/")
+def get_root_services(
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size")
+):
+    """
+    API to get paginated root services with second-level hierarchy data.
+    """
     try:
-        data = await services.get_app_service_data(db)
-        return JSONResponse(status_code=200,content={"status_code": 200, "data": data})
-    except:
-        return JSONResponse(status_code=400,content={"status_code": 400, "detail": "Invalid Request"})
+        offset = (page - 1) * size
+        data = services.get_root_services(db, offset, size)
+        return {
+            "page": page,
+            "size": size,
+            "total_services": len(data),
+            "data": data
+        }
+    except HTTPException as exc:
+        # Raise the exception to be handled by the custom HTTP exception handler
+        raise exc
+    except Exception as e:
+        # Catch unexpected exceptions
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+    
+@router.get("/second-level-services/{root_service_id}")
+def get_second_level_hierarchy(
+    root_service_id: UUID,
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    """
+    API endpoint to fetch paginated second-level hierarchy services for a specific root service.
+    """
+    try:
+        offset = (page - 1) * size
+        result = services.get_second_level_hierarchy(db, root_service_id, offset, size)
+
+        return {
+            "root_service_id": root_service_id,
+            "page": page,
+            "size": size,
+            "total_services": result["total_count"],
+            "data": result["data"],
+        }
+
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+    
+@router.get("/root-service/{root_service_id}/hierarchy/")
+def fetch_hierarchy_with_pagination(
+    root_service_id: UUID,
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    """
+    API endpoint to fetch paginated second-level hierarchy services for a specific root service,
+    including up to 5 third-level services for each second-level service.
+    """
+    try:
+        offset = (page - 1) * size
+        result = get_second_and_third_level_hierarchy(db, root_service_id, offset, size)
+
+        return {
+            "root_service_id": root_service_id,
+            "page": page,
+            "size": size,
+            "total_second_level_services": result["total_count"],
+            "data": result["data"],
+        }
+
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )

@@ -1,43 +1,134 @@
-from sqlalchemy.orm import Session, joinedload
-import fastapi as _fastapi
-import base64
+from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from uuid import UUID
+
+from models import Service, ServiceLogo
 
 
-from models import App
-# from kafka_producer import kafka_producer_service
-
-
-async def get_app_service_data(db: Session):
-    
-    
-
-    result = db.execute(
-        db.query(App)
-        .options(joinedload(App.service))  
+def get_root_services(db: Session, offset: int, limit: int):
+    """
+    Fetch paginated root services and include second-level hierarchy only for the first root service.
+    """
+    # Query root services with logos
+    root_services_query = (
+        select(Service.id, Service.name, ServiceLogo.logo_data)
+        .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
+        .where(Service.parent_id == None)  # Root services have no parent
+        .order_by(Service.created_at)
+        .offset(offset)
+        .limit(limit)
     )
-    apps = result.scalars().all()
+    root_services = db.execute(root_services_query).fetchall()
 
-    response = []
-    for app in apps:
-        response.append({
-            "id": app.id,
-            "name": app.name,
-            "description": app.description,
-            "logo": base64.b64encode(app.logo).decode('utf-8') if app.logo else None,
-            "created_at": app.created_at.isoformat() if app.created_at else None,
-            "updated_at": app.updated_at.isoformat() if app.updated_at else None,
-            "services": [
-                {
-                    "id": service.id,
-                    "name": service.name,
-                    "description": service.description,
-                    "logo": base64.b64encode(service.logo).decode('utf-8') if service.logo else None,
-                    "image_path": service.image_path,
-                    "created_at": service.created_at.isoformat() if service.created_at else None,
-                    "updated_at": service.updated_at.isoformat() if service.updated_at else None,
-                }
-                for service in app.service  
-            ]
+    services_with_hierarchy = []
+
+    for i, root_service in enumerate(root_services):
+        # For the first root service in the pagination, fetch second-level data
+        if i == 0:
+            second_level_query = (
+                select(Service.id, Service.name)
+                .where(Service.parent_id == root_service.id)
+            )
+            second_level_data = db.execute(second_level_query).fetchall()
+        else:
+            second_level_data = []
+
+        # Append the service with its data
+        services_with_hierarchy.append({
+            "service_id": root_service.id,
+            "service_name": root_service.name,
+            "logo_data": root_service.logo_data,
+            "second_level_hierarchy": [
+                {"service_id": child.id, "service_name": child.name}
+                for child in second_level_data
+            ],
         })
 
-    return response
+    return services_with_hierarchy
+
+def get_second_level_hierarchy(
+    db: Session, root_service_id: UUID, offset: int, limit: int
+):
+    """
+    Fetch paginated second-level hierarchy services for a specific root service.
+    """
+    # Query second-level services
+    second_level_query = (
+        select(Service.id, Service.name, ServiceLogo.logo_data)
+        .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
+        .where(Service.parent_id == root_service_id)
+        .order_by(Service.created_at)
+        .offset(offset)
+        .limit(limit)
+    )
+    second_level_data = db.execute(second_level_query).fetchall()
+
+    # Count total second-level services
+    total_count_query = select(func.count()).where(Service.parent_id == root_service_id)
+    total_count = db.scalar(total_count_query)
+
+    # Format response data
+    formatted_data = [
+        {
+            "service_id": service.id,
+            "service_name": service.name,
+            "logo_data": service.logo_data,
+        }
+        for service in second_level_data
+    ]
+
+    return {
+        "data": formatted_data,
+        "total_count": total_count,
+    }
+
+def get_second_and_third_level_hierarchy(
+    db: Session, root_service_id: UUID, offset: int, limit: int
+):
+    """
+    Fetch paginated second-level hierarchy services for a specific root service,
+    including up to 5 third-level services for each second-level service.
+    """
+    # Query second-level services
+    second_level_query = (
+        select(Service.id, Service.name, ServiceLogo.logo_data)
+        .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
+        .where(Service.parent_id == root_service_id)
+        .order_by(Service.created_at)
+        .offset(offset)
+        .limit(limit)
+    )
+    second_level_data = db.execute(second_level_query).fetchall()
+
+    # Count total second-level services
+    total_count_query = select(func.count()).where(Service.parent_id == root_service_id)
+    total_count = db.scalar(total_count_query)
+
+    # Fetch third-level services for each second-level service
+    formatted_data = []
+    for second_service in second_level_data:
+        third_level_query = (
+            select(Service.id, Service.name, ServiceLogo.logo_data)
+            .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
+            .where(Service.parent_id == second_service.id)
+            .order_by(Service.created_at)
+            .limit(5)  # Limit to 5 third-level services
+        )
+        third_level_data = db.execute(third_level_query).fetchall()
+
+        formatted_data.append({
+            "service_id": second_service.id,
+            "service_name": second_service.name,
+            "logo_data": second_service.logo_data,
+            "third_level_hierarchy": [
+                {"service_id": child.id, "service_name": child.name, "logo_data": child.logo_data}
+                for child in third_level_data
+            ],
+        })
+
+    return {
+        "data": formatted_data,
+        "total_count": total_count,
+    }
+
+

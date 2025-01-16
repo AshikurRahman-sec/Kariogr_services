@@ -8,7 +8,7 @@ import logging
 from schemas.oauth_schemas import UserCreate, GenerateOtp, VerifyOtp, GenerateUserToken
 from database import get_db
 from utils import get_user_by_email
-import services.fastapi_auth_service as _service
+import services.email_auth_service as _service
 
 logging.basicConfig(level=logging.INFO)
 
