@@ -73,28 +73,55 @@ def get_second_level_hierarchy(
             detail=f"An unexpected error occurred: {str(e)}"
         )
     
-@router.get("/root-service/{root_service_id}/hierarchy/")
-def fetch_hierarchy_with_pagination(
-    root_service_id: UUID,
+@router.get("/service/{service_id}/hierarchy/")
+def get_descendant_hierarchy(
+    service_id: UUID,
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
 ):
     """
-    API endpoint to fetch paginated second-level hierarchy services for a specific root service,
-    including up to 5 third-level services for each second-level service.
+    API endpoint to fetch paginated first-level descendants of a service,
+    including up to 5 second-level descendants for each first-level descendant.
     """
     try:
         offset = (page - 1) * size
-        result = get_second_and_third_level_hierarchy(db, root_service_id, offset, size)
+        result = services.get_descendant_hierarchy(db, service_id, offset, size)
 
         return {
-            "root_service_id": root_service_id,
+            "service_id": service_id,
             "page": page,
             "size": size,
-            "total_second_level_services": result["total_count"],
+            "total_first_level_services": result["total_count"],
             "data": result["data"],
         }
+
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+    
+@router.get("/service/{service_id}/details/")
+def get_service_details(
+    service_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    API endpoint to fetch details of a specific service by its ID.
+    """
+    try:
+        # Call the service function to get service details
+        service_details = services.get_service_details(db, service_id)
+
+        if not service_details:
+            raise HTTPException(
+                status_code=404, detail=f"Service with ID {service_id} not found."
+            )
+
+        return service_details
 
     except HTTPException as exc:
         raise exc

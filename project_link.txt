@@ -8,3 +8,6 @@ https://medium.com/@himanshu.sharma.for.work/step-by-step-guide-to-implementing-
 
 microservice
 https://snimkar1905.medium.com/building-microservices-with-fastapi-and-rabbitmq-part1-1104dbd4ad96
+
+hierarchy level data modeling
+https://medium.com/@rishabhdevmanu/from-trees-to-tables-storing-hierarchical-data-in-relational-databases-a5e5e6e1bd64
