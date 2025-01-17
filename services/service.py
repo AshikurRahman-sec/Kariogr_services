@@ -179,7 +179,7 @@ def get_service_details(db: Session, service_id: UUID):
         "image_url": service_details.image_path,
     }
 
-def get_leaf_services(db: Session, offset: int, limit: int):
+def get_special_services(db: Session, offset: int, limit: int):
     """
     Fetch paginated services that are leaf nodes (services with no children).
     """
@@ -205,6 +205,38 @@ def get_leaf_services(db: Session, offset: int, limit: int):
             "service_name": service.name,
             "image_url": service.image_url,
             
+        }
+        for service in leaf_services
+    ]
+
+    return {
+        "data": formatted_data,
+        "total_count": total_count,
+    }
+
+def get_search_services(db: Session, offset: int, limit: int):
+    """
+    Fetch paginated services that are leaf nodes (services with no children).
+    """
+    # Query leaf services
+    leaf_services_query = (
+        select(Service.id, Service.name)
+        .where(Service.is_leaf == True)  # Only leaf services
+        .order_by(Service.created_at)
+        .offset(offset)
+        .limit(limit)
+    )
+    leaf_services = db.execute(leaf_services_query).fetchall()
+
+    # Count total leaf services
+    total_count_query = select(func.count()).where(Service.is_leaf == True)
+    total_count = db.scalar(total_count_query)
+
+    # Format the data
+    formatted_data = [
+        {
+            "service_id": service.id,
+            "service_name": service.name,  
         }
         for service in leaf_services
     ]

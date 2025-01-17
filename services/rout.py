@@ -132,8 +132,8 @@ def get_service_details(
             detail=f"An unexpected error occurred: {str(e)}"
         )
 
-@router.get("/services/leaf-nodes/")
-def fetch_leaf_services(
+@router.get("/special-services/")
+def get_special_services(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
@@ -143,12 +143,40 @@ def fetch_leaf_services(
     """
     try:
         offset = (page - 1) * size
-        result = services.get_leaf_services(db, offset, size)
+        result = services.get_special_services(db, offset, size)
 
         return {
             "page": page,
             "size": size,
             "total_leaf_services": result["total_count"],
+            "data": result["data"],
+        }
+
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+    
+@router.get("/search-services/")
+def get_search_services(
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    """
+    API endpoint to fetch paginated leaf-node services.
+    """
+    try:
+        offset = (page - 1) * size
+        result = services.get_search_services(db, offset, size)
+
+        return {
+            "page": page,
+            "size": size,
+            "total_search_services": result["total_count"],
             "data": result["data"],
         }
 
