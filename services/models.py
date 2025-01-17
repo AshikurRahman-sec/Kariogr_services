@@ -4,12 +4,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-Base = declarative_base()
+import database
 
-class Service(Base):
+class Service(database.Base):
     __tablename__ = 'services'
     __table_args__ = (
         Index('idx_service_parent_id', 'parent_id'),
@@ -33,7 +32,7 @@ class Service(Base):
     descendants = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.ancestor_id', back_populates='ancestor', cascade="all, delete-orphan")
     ancestors = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.descendant_id', back_populates='descendant', cascade="all, delete-orphan")
 
-class ServiceHierarchy(Base):
+class ServiceHierarchy(database.Base):
     __tablename__ = 'service_hierarchy'
     __table_args__ = (
         UniqueConstraint('ancestor_id', 'descendant_id', name='uq_service_hierarchy'),
@@ -47,7 +46,7 @@ class ServiceHierarchy(Base):
     ancestor = relationship('Service', foreign_keys=[ancestor_id], back_populates='descendants')
     descendant = relationship('Service', foreign_keys=[descendant_id], back_populates='ancestors')
 
-class ServiceLogo(Base):
+class ServiceLogo(database.Base):
     __tablename__ = 'service_logos'
     __table_args__ = {"schema": "karigor"}
 
@@ -59,7 +58,7 @@ class ServiceLogo(Base):
 
     service = relationship('Service', back_populates='logo')
 
-class ServiceDescription(Base):
+class ServiceDescription(database.Base):
     __tablename__ = 'service_descriptions'
     __table_args__ = {"schema": "karigor"}
 

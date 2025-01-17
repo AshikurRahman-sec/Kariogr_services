@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
-import models 
+from models import *
+import database as _database
 
 from rout import router as service_router
 # from kafka_producer import kafka_producer_service
@@ -15,10 +17,21 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content={"status_code": exc.status_code, "detail": exc.detail}
     )
 
+origins = [
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def on_startup():
-    models.create_database()
+    _database.create_database()
 #     await kafka_producer_service.start()
 
 # @app.on_event("shutdown")

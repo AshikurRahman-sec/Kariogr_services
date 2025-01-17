@@ -53,6 +53,7 @@ def get_second_level_hierarchy(
     """
     API endpoint to fetch paginated second-level hierarchy services for a specific root service.
     """
+    
     try:
         offset = (page - 1) * size
         result = services.get_second_level_hierarchy(db, root_service_id, offset, size)
@@ -122,6 +123,34 @@ def get_service_details(
             )
 
         return service_details
+
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+
+@router.get("/services/leaf-nodes/")
+def fetch_leaf_services(
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    """
+    API endpoint to fetch paginated leaf-node services.
+    """
+    try:
+        offset = (page - 1) * size
+        result = services.get_leaf_services(db, offset, size)
+
+        return {
+            "page": page,
+            "size": size,
+            "total_leaf_services": result["total_count"],
+            "data": result["data"],
+        }
 
     except HTTPException as exc:
         raise exc

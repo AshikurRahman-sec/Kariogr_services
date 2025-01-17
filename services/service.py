@@ -62,7 +62,7 @@ def get_second_level_hierarchy(
     """
     # Query second-level services
     second_level_query = (
-        select(Service.id, Service.name, ServiceLogo.logo_data)
+        select(Service.id, Service.name, ServiceLogo.logo_data, Service.is_leaf)
         .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
         .where(Service.parent_id == root_service_id)
         .order_by(Service.created_at)
@@ -81,7 +81,7 @@ def get_second_level_hierarchy(
             "service_id": service.id,
             "service_name": service.name,
             "logo_data": service.logo_data,
-            "is_leaf": service.is_leaf,
+            "is_leaf": service.is_leaf
         }
         for service in second_level_data
     ]
@@ -100,7 +100,7 @@ def get_descendant_hierarchy(
     """
     # Query first-level descendants
     first_level_query = (
-        select(Service.id, Service.name, ServiceLogo.logo_data, Service.is_leaf)
+        select(Service.id, Service.name, ServiceLogo.logo_data, Service.is_leaf, ServiceLogo.image_url)
         .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
         .where(Service.parent_id == service_id)
         .order_by(Service.created_at)
@@ -117,7 +117,7 @@ def get_descendant_hierarchy(
     formatted_data = []
     for first_service in first_level_data:
         second_level_query = (
-            select(Service.id, Service.name, ServiceLogo.logo_data, Service.is_leaf)
+            select(Service.id, Service.name, ServiceLogo.logo_data, Service.is_leaf, ServiceLogo.image_url)
             .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
             .where(Service.parent_id == first_service.id)
             .order_by(Service.created_at)
@@ -129,12 +129,14 @@ def get_descendant_hierarchy(
             "service_id": first_service.id,
             "service_name": first_service.name,
             "logo_data": first_service.logo_data,
+            "image_url": first_service.image_url,
             "is_leaf": first_service.is_leaf,
             "second_level_hierarchy": [
                 {
                     "service_id": child.id,
                     "service_name": child.name,
                     "logo_data": child.logo_data,
+                    "image_url": child.image_url,
                     "is_leaf": child.is_leaf,
                 }
                 for child in second_level_data
@@ -173,5 +175,41 @@ def get_service_details(db: Session, service_id: UUID):
     return {
         "service_id": service_details.id,
         "service_name": service_details.name,
-        "image_path": service_details.image_path,
+        "service_description": service_details.description,
+        "image_url": service_details.image_path,
+    }
+
+def get_leaf_services(db: Session, offset: int, limit: int):
+    """
+    Fetch paginated services that are leaf nodes (services with no children).
+    """
+    # Query leaf services
+    leaf_services_query = (
+        select(Service.id, Service.name, ServiceLogo.image_url)
+        .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
+        .where(Service.is_leaf == True)  # Only leaf services
+        .order_by(Service.created_at)
+        .offset(offset)
+        .limit(limit)
+    )
+    leaf_services = db.execute(leaf_services_query).fetchall()
+
+    # Count total leaf services
+    total_count_query = select(func.count()).where(Service.is_leaf == True)
+    total_count = db.scalar(total_count_query)
+
+    # Format the data
+    formatted_data = [
+        {
+            "service_id": service.id,
+            "service_name": service.name,
+            "image_url": service.image_url,
+            
+        }
+        for service in leaf_services
+    ]
+
+    return {
+        "data": formatted_data,
+        "total_count": total_count,
     }
