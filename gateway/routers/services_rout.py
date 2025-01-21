@@ -1,0 +1,231 @@
+from fastapi import APIRouter, HTTPException, Query
+from uuid import UUID
+import requests, os
+
+from utils.response_builder import build_response
+from schemas.service_schemas import *
+
+router = APIRouter()
+
+SERVICE_BASE_URL = os.environ.get("SERVICE_BASE_URL")
+
+
+# POST-based functions
+@router.post("/root-services/")
+async def get_root_services_gateway(
+    request_header: RequestHeader,
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    """
+    Gateway API to forward the `get_root_services` request to the corresponding microservice.
+    """
+    try:
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/root-services/",
+            params={"page": page, "size": size},
+        )
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        else:
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_header.requestId,
+        )
+
+@router.post("/second-level-services/")
+async def get_second_level_services_gateway(
+    request_data: ServiceIdRequestBody,
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    """
+    Gateway API to forward the `get_second_level_services` request to the corresponding microservice.
+    """
+    try:
+        # Calculate offset
+        offset = (page - 1) * size
+        
+        # Extract service ID from the request body
+        service_id = request_data.body.service_id
+        
+        # Forward request to the microservice
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/second-level-services/{service_id}",
+            params={"offset": offset, "limit": size},
+        )
+        
+        # Handle response
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        else:
+            # Error response from microservice
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        # Service unavailable
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        # Unexpected error
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post("/service/details/")
+async def get_service_details_gateway(
+    request_data: ServiceIdRequestBody
+):
+    try:
+
+        # Extract service ID from the request body
+        service_id = request_data.body.service_id
+
+        response = requests.get(f"{SERVICE_BASE_URL}/service/{service_id}/details/")
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        elif response.status_code == 404:
+            return build_response(
+                message=f"Service with ID {service_id} not found.",
+                code="404",
+                request_id=request_data.header.requestId,
+            )
+        else:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post("/special-services/")
+async def get_special_services_gateway(
+    request_header: RequestHeader,
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    try:
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/special-services/",
+            params={"page": page, "size": size},
+        )
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        else:
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_header.requestId,
+        )
+
+@router.post("/search-services/")
+async def get_search_services_gateway(
+    request_header: RequestHeader,
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    try:
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/search-services/",
+            params={"page": page, "size": size},
+        )
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        else:
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_header.requestId,
+        )
+
