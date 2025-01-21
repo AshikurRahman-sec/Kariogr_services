@@ -18,7 +18,7 @@ async def create_booking(db: Session, booking_data: BookingCreate) -> BookingRes
         home_address=booking_data.home_address,
         worker_duration=booking_data.worker_duration,
         worker_count=booking_data.worker_count,
-        booking_type=BookingType(booking_data.booking_type.value),
+        booking_type=BookingType(booking_data.booking_type).value,
         service_id=booking_data.service_id,
     )
     new_booking.set_dates(booking_data.dates)  # Pass list directly
