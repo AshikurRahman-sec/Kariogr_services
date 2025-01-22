@@ -19,13 +19,14 @@ router = APIRouter()
 @router.post("/", response_model=_schemas.BookingResponse, tags=["Bookings"], status_code=status.HTTP_201_CREATED)
 async def create_booking_handler(booking_data: _schemas.BookingCreate, db: Session = Depends(get_db)):
 
-    try:
-        return await _service.create_booking(db, booking_data)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    return await _service.create_booking(db, booking_data)
+    # try:
+    #     return await _service.create_booking(db, booking_data)
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail=str(e)
+    #     )
 
 @router.get("/{booking_id}", response_model=_schemas.BookingResponse, tags=["Bookings"])
 async def get_booking_handler(booking_id: str, db: Session = Depends(get_db)):
