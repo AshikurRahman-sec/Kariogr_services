@@ -20,7 +20,13 @@ class Booking(database.Base):
     home_address = Column(String, nullable=False)
     worker_duration = Column(Integer, comment="Duration in hours")
     worker_count = Column(Integer)
-    booking_type = Column(Enum(BookingType))
+    booking_type = Column(
+        Enum(
+            BookingType,
+            values_callable=lambda x: [e.value for e in x],  # Persist values instead of names
+            name="booking_type_enum"  # Name of the PostgreSQL enum type
+        )
+    )
     dates = Column(Text, nullable=False, comment="Serialized JSON list of dates, e.g., ['18 week of 2024']")
     times = Column(Text, nullable=False, comment="Serialized JSON list of time slots, e.g., ['11pm-1am']")
     service_id = Column(String, nullable=False, comment="ID of the service from another service")
