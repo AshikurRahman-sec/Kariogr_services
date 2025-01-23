@@ -6,7 +6,6 @@ import database as _database
 
 
 from router.oauth_rout import router as oauth_router
-from router.firebase_rout import router as firebase_auth_router
 from router.email_auth_rout import router as email_auth_router
 from kafka_producer import kafka_producer_service
 
@@ -22,7 +21,6 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 app.include_router(oauth_router, prefix="/api", tags=["Custom OAuth"])
 app.include_router(email_auth_router, prefix="/api", tags=["Email Auth"])
-app.include_router(firebase_auth_router, prefix="/api", tags=["Firebase Auth"])
 
 
 @app.on_event("startup")

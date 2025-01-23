@@ -1,140 +1,161 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Float, ForeignKey
+from sqlalchemy import (
+    Column, String, Text, Boolean, DateTime, Float,
+    ForeignKey, TIMESTAMP, Date, Numeric, Enum, Integer, func
+)
 from sqlalchemy.orm import relationship
-import passlib.hash as _hash
+import uuid
+import database
 
-from datetime import datetime
+# Role Table
+class Role(database.Base):
+    __tablename__ = 'roles'
+    role_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    role_name = Column(String(100), unique=True, nullable=False)
+    users = relationship("UserAuth", back_populates="role", cascade="all, delete-orphan")
+    permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
 
-import database 
+# Permission Table
+class Permission(database.Base):
+    __tablename__ = 'permissions'
+    permission_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    permission_name = Column(String(100), unique=True, nullable=False)
+    description = Column(String(255))
+    roles = relationship("RolePermission", back_populates="permission", cascade="all, delete-orphan")
 
+# RolePermission Association Table
+class RolePermission(database.Base):
+    __tablename__ = 'role_permissions'
+    role_id = Column(String(36), ForeignKey('roles.role_id', ondelete="CASCADE"), primary_key=True)
+    permission_id = Column(String(36), ForeignKey('permissions.permission_id', ondelete="CASCADE"), primary_key=True)
+    role = relationship("Role", back_populates="permissions")
+    permission = relationship("Permission", back_populates="roles")
 
-class User(database.Base):
-    __tablename__ = "users"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    #name = Column(String(255))
-    email = Column(String(255), unique=True, index=True)
+# UserAuth Table
+class UserAuth(database.Base):
+    __tablename__ = 'users'
+    user_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password = Column(String(255))
+    firebase_uid = Column(String(255), unique=True, index=True)
+    role_id = Column(String(36), ForeignKey('roles.role_id'))
     is_verified = Column(Boolean , default=False)
     otp = Column(Integer)
-    hashed_password = Column(String(255))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     
-    client_profile = relationship("ClientProfile", uselist=False, back_populates="user")
-    worker_profile = relationship("WorkerProfile", uselist=False, back_populates="user")
+    role = relationship("Role", back_populates="users")
+    profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
-    def verify_password(self, password: str):
-        return _hash.bcrypt.verify(password, self.hashed_password)
-
-class Client(database.Base):
-    __tablename__ = "clients"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(String, unique=True, index=True)
-    client_secret = Column(String)
-    redirect_uri = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class AuthorizationCode(database.Base):
-    __tablename__ = "authorization_codes"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    code = Column(String, unique=True)
-    expires = Column(DateTime)
-    client_id = Column(Integer, ForeignKey("karigor.clients.id", ondelete="CASCADE"))
-    scopes = Column(Text)  # comma-separated scopes
-    state = Column(String)  # added for CSRF protection
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class Token(database.Base):
-    __tablename__ = "tokens"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    access_token = Column(String, unique=True)
-    refresh_token = Column(String, unique=True)
-    token_type = Column(String)
-    expires = Column(DateTime)
-    user_id = Column(Integer, ForeignKey("karigor.users.id", ondelete="CASCADE"))
-    scopes = Column(Text)  # comma-separated scopes
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class Role(database.Base):
-    __tablename__ = "roles"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, index=True)
-    description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class UserRole(database.Base):
-    __tablename__ = "user_roles"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("karigor.users.id", ondelete="CASCADE"))
-    role_id = Column(Integer, ForeignKey("karigor.roles.id", ondelete="CASCADE"))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class Permission(database.Base):
-    __tablename__ = "permissions"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, index=True)
-    description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class RolePermission(database.Base):
-    __tablename__ = "role_permissions"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    role_id = Column(Integer, ForeignKey("karigor.roles.id", ondelete="CASCADE"))
-    permission_id = Column(Integer, ForeignKey("karigor.permissions.id", ondelete="CASCADE"))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+# UserProfile Table
+class UserProfile(database.Base):
+    __tablename__ = 'user_profiles'
+    profile_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete="CASCADE"), unique=True)
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    phone_number = Column(String(20), index=True)
+    date_of_birth = Column(Date)
+    profile_picture_url = Column(String(255))
+    address_id = Column(String(36), ForeignKey('addresses.address_id', ondelete="SET NULL"))
     
+    user = relationship("UserAuth", back_populates="profile")
+    address = relationship("Address", cascade="all, delete-orphan")
+    service_preferences = relationship("UserServicePreference", back_populates="user")
+    worker_profile = relationship("WorkerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+# Address Table
+class Address(database.Base):
+    __tablename__ = 'addresses'
+    address_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    street_address = Column(String(255))
+    city = Column(String(100), index=True)
+    state_province = Column(String(100))
+    postal_code = Column(String(20), index=True)
+    country = Column(String(100))
+    latitude = Column(Numeric(9, 6))
+    longitude = Column(Numeric(9, 6))
+
+# WorkerProfile Table
 class WorkerProfile(database.Base):
-    __tablename__ = "worker_profiles"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("karigor.users.id", ondelete="CASCADE"))
+    __tablename__ = 'worker_profiles'
+    worker_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey('user_profiles.profile_id', ondelete="CASCADE"), unique=True)
+    hourly_rate = Column(Numeric(10, 2))
+    rating = Column(Numeric(3, 2))
+    availability_status = Column(Enum('available', 'busy', 'away', name='availability_status'))
+    experience_years = Column(Integer)
     bio = Column(Text)
-    availability = Column(String(255))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     
-class Skill(database.Base):
-    __tablename__ = "skills"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, index=True)  # e.g., 'Plumbing', 'Carpentry'
-    description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-class WorkerSkill(database.Base):
-    __tablename__ = "worker_skills"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    worker_id = Column(Integer, ForeignKey("karigor.worker_profiles.id", ondelete="CASCADE"))
-    skill_id = Column(Integer, ForeignKey("karigor.skills.id", ondelete="CASCADE"))
-    price = Column(Float)  # Price for the specific skill
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-class ClientProfile(database.Base):
-    __tablename__ = "client_profiles"
-    __table_args__ = {"schema": "karigor"}
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("karigor.users.id", ondelete="CASCADE"))
-    preferences = Column(Text)  # Client's service preferences
-    service_history = Column(Text)  # A record of the services hired by the client
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user = relationship("UserProfile", back_populates="worker_profile")
+    skills = relationship("WorkerSkill", back_populates="worker", cascade="all, delete-orphan")
+    certifications = relationship("WorkerCertification", back_populates="worker", cascade="all, delete-orphan")
 
-    user = relationship("User", back_populates="client_profile")
+# Skill Table
+class Skill(database.Base):
+    __tablename__ = 'skills'
+    skill_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    skill_name = Column(String(255), unique=True, nullable=False)
+    category = Column(String(100), index=True)
+    description = Column(Text)
+    workers = relationship("WorkerSkill", back_populates="skill", cascade="all, delete-orphan")
+
+# WorkerSkill Association Table
+class WorkerSkill(database.Base):
+    __tablename__ = 'worker_skills'
+    worker_id = Column(String(36), ForeignKey('worker_profiles.worker_id', ondelete="CASCADE"), primary_key=True)
+    skill_id = Column(String(36), ForeignKey('skills.skill_id', ondelete="CASCADE"), primary_key=True)
+    proficiency_level = Column(Enum('beginner', 'intermediate', 'expert', name='proficiency_level'))
+    years_of_experience = Column(Integer)
+    
+    worker = relationship("WorkerProfile", back_populates="skills")
+    skill = relationship("Skill", back_populates="workers")
+
+# Token Table
+class Token(database.Base):
+    __tablename__ = 'tokens'
+    token_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete="CASCADE"), index=True)
+    access_token = Column(String(512), index=True)
+    refresh_token = Column(String(512), index=True)
+    token_type = Column(String(50), default='bearer')
+    scopes = Column(String(255))
+    expires_at = Column(TIMESTAMP)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+# class Service(database.Base):
+#     __tablename__ = 'services'
+#     service_id = Column(Integer, primary_key=True)
+#     name = Column(String(255), unique=True, nullable=False)
+#     category = Column(String(100), index=True)
+#     description = Column(Text)
+#     avg_hourly_rate = Column(Numeric(10, 2))
+    
+#     preferences = relationship("UserServicePreference", back_populates="service")
+#     recommendations = relationship("ServiceRecommendation", back_populates="service")
+
+# class UserServicePreference(database.Base):
+#     __tablename__ = 'user_service_preferences'
+#     user_id = Column(Integer, ForeignKey('user_profiles.profile_id'), primary_key=True)
+#     service_id = Column(Integer, ForeignKey('services.service_id'), primary_key=True)
+#     preference_weight = Column(Numeric(3, 2))
+    
+#     user = relationship("UserProfile", back_populates="service_preferences")
+#     service = relationship("Service", back_populates="preferences")
+
+# class ServiceRecommendation(database.Base):
+#     __tablename__ = 'service_recommendations'
+#     recommendation_id = Column(Integer, primary_key=True)
+#     user_id = Column(Integer, ForeignKey('users.user_id'), index=True)
+#     service_id = Column(Integer, ForeignKey('services.service_id'), index=True)
+#     score = Column(Numeric(3, 2))
+#     algorithm_version = Column(String(50))
+#     created_at = Column(TIMESTAMP, server_default=func.now())
+    
+#     user = relationship("UserAuth")
+#     service = relationship("Service", back_populates="recommendations")
+
 
 
