@@ -3,15 +3,19 @@ from datetime import datetime, timedelta
 from jose import jwt
 from uuid import uuid4
 import fastapi as _fastapi
-import random
+import random, os
+from firebase_admin import auth as firebase_auth
+from dotenv import load_dotenv
+import logging
 
 from schemas.oauth_schemas import UserCreate, GenerateOtp, VerifyOtp
-from schemas import eamil_auth_schemas as _schemas
+from schemas import auth_schemas as _schemas
 from models import auth_model as _model
 from kafka_producer import kafka_producer_service
 from utilities import verify_password, get_password_hash, create_access_token, decode_token
 
 
+logging.basicConfig(level=logging.INFO)
 
 async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
 
@@ -114,3 +118,32 @@ def verify_token(db: _orm.Session, token: str):
         return user_id
     except jwt.ExpiredSignatureError:
         return None
+    
+async def firebase_login(db: _orm.Session, id_token: str):
+    """Authenticate with Firebase and generate tokens."""
+    # Verify Firebase token
+    decoded_token = firebase_auth.verify_id_token(id_token)
+    firebase_uid = decoded_token.get("uid")
+    email = decoded_token.get("email")
+
+    if not firebase_uid or not email:
+        raise _fastapi.HTTPException(status_code=400, detail="Invalid Firebase token")
+
+    # Check if user exists
+    db_user = (
+        db.query(_model.UserAuth).filter(_model.UserAuth.firebase_uid == firebase_uid).first()
+    )
+
+    # Create user if not found
+    if not db_user:
+        db_user = _model.UserAuth(
+            firebase_uid=firebase_uid,
+            email=email,
+            is_verified=True,
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+
+    # Generate tokens
+    return create_tokens(db_user.user_id)

@@ -4,14 +4,35 @@ from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from datetime import datetime
 import logging
+from firebase_admin import credentials, initialize_app
+import os
 
-from schemas import eamil_auth_schemas as _schemas
+from schemas import auth_schemas as _schemas
 from schemas.oauth_schemas import GenerateOtp, VerifyOtp
 from models import auth_model as _model
 from database import get_db
 import services.email_auth_service as _service
 
 logging.basicConfig(level=logging.INFO)
+
+
+# Rebuild the Firebase credentials dictionary
+firebase_credentials = {
+    "type": os.getenv("FIREBASE_TYPE"),
+    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n"),
+    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+    "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
+    "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_CERT_URL"),
+    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL"),
+}
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate(firebase_credentials)
+initialize_app(cred)
 
 router = APIRouter()
 
@@ -94,3 +115,14 @@ async def verify_token(token: str, db: Session = Depends(get_db)):
         return {"user_id": user_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while verifying token")
+    
+@router.post("/auth/firebase", response_model=_schemas.TokenResponse, tags=["Firebase Auth"])
+async def firebase_auth(data: _schemas.FirebaseAuthRequest, db: Session = Depends(get_db)):
+    """Authenticate using Firebase and return tokens."""
+    try:
+        return await _service.firebase_login(db, data.id_token)
+    except HTTPException as exc:
+        raise exc  # Propagate HTTPExceptions with appropriate status codes
+    except Exception as e:
+        # Log the error if needed
+        raise HTTPException(status_code=500, detail="An unexpected error occurred during Firebase authentication")

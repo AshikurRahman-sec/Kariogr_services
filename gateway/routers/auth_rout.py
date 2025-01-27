@@ -1,84 +1,128 @@
-from fastapi import HTTPException, APIRouter
-import fastapi as _fastapi
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Query, HTTPException
+from typing import Optional
 import requests
-import os
-import jwt
-from jwt.exceptions import DecodeError
+from pydantic import BaseModel
+from datetime import datetime
 
-from schemas.auth_schemas import *
+
+
+# Define the base URL for the service
+SERVICE_BASE_URL = "http://service-url"  # Replace with the actual service base URL
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-JWT_SECRET = os.environ.get("JWT_SECRET")
-AUTH_BASE_URL = os.environ.get("AUTH_BASE_URL")
-
-
-# JWT token validation
-async def jwt_validation(token: str = _fastapi.Depends(oauth2_scheme)):
+@router.post("/signup/")
+async def signup_gateway(
+    request_header: RequestHeader,
+    email: str,
+    password: str,
+):
+    """
+    Gateway API to forward the `signup` request to the service.
+    """
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        return payload
-    except DecodeError:
-        raise HTTPException(status_code=401, detail="Invalid JWT token")
-
-# Authentication routes
-@router.post("/login", tags=['Authentication Service'])
-async def login(user_data: UserCredentials):
-    try:
-        response = requests.post(f"{AUTH_BASE_URL}/api/token", json={"username": user_data.username, "password": user_data.password})
+        payload = {"email": email, "password": password}
+        response = requests.post(f"{SERVICE_BASE_URL}/signup/", json=payload)
         if response.status_code == 200:
-            return response.json()
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Signup successful",
+                code="200",
+            )
         else:
-            raise HTTPException(status_code=response.status_code, detail=response.json())
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
     except requests.exceptions.ConnectionError:
-        raise HTTPException(status_code=503, detail="Authentication service is unavailable")
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_header.requestId,
+        )
 
-@router.post("/register", tags=['Authentication Service'])
-async def registeration(user_data:UserRegisteration):
-
+@router.post("/login/")
+async def login_gateway(
+    request_header: RequestHeader,
+    email: str,
+    password: str,
+):
+    """
+    Gateway API to forward the `login` request to the service.
+    """
     try:
-        response = requests.post(f"{AUTH_BASE_URL}/api/users", json={"name":user_data.name,"email": user_data.email, "password": user_data.password})
+        payload = {"email": email, "password": password}
+        response = requests.post(f"{SERVICE_BASE_URL}/login/", json=payload)
         if response.status_code == 200:
-            return response.json()
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Login successful",
+                code="200",
+            )
         else:
-            raise HTTPException(status_code=response.status_code, detail=response.json())
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
     except requests.exceptions.ConnectionError:
-        raise HTTPException(status_code=503, detail="Authentication service is unavailable")
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_header.requestId,
+        )
 
-@router.post("/generate_otp", tags=['Authentication Service'])
-async def generate_otp(user_data:GenerateOtp):
+@router.post("/token/refresh/")
+async def refresh_token_gateway(
+    request_header: RequestHeader,
+    refresh_token: str,
+):
+    """
+    Gateway API to forward the `refresh_token` request to the service.
+    """
     try:
-        response = requests.post(f"{AUTH_BASE_URL}/api/users/generate_otp", json={"email":user_data.email})
+        payload = {"refresh_token": refresh_token}
+        response = requests.post(f"{SERVICE_BASE_URL}/token/refresh/", json=payload)
         if response.status_code == 200:
-            return response.json()
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Token refresh successful",
+                code="200",
+            )
         else:
-            raise HTTPException(status_code=response.status_code, detail=response.json())
+            return build_response(
+                data=response.json(),
+                request_id=request_header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
     except requests.exceptions.ConnectionError:
-        raise HTTPException(status_code=503, detail="Authentication service is unavailable")
-
-@router.post("/verify_otp", tags=['Authentication Service'])
-async def verify_otp(user_data:VerifyOtp):
-    try:
-        response = requests.post(f"{AUTH_BASE_URL}/api/users/verify_otp", json={"email":user_data.email ,"otp":user_data.otp})
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise HTTPException(status_code=response.status_code, detail=response.json())
-    except requests.exceptions.ConnectionError:
-        raise HTTPException(status_code=503, detail="Authentication service is unavailable")
-    
-@router.get("/view_profile", tags=['Authentication Service'])
-async def view_profile(user_data:GenerateOtp, payload: dict = _fastapi.Depends(jwt_validation)):
-    try:
-        response = requests.get(f"{AUTH_BASE_URL}/api/users/profile?email={user_data.email}")
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise HTTPException(status_code=response.status_code, detail=response.json())
-    except requests.exceptions.ConnectionError:
-        raise HTTPException(status_code=503, detail="Authentication service is unavailable")
-    
-
-    
+        return build_response(
+            message="Service is unavailable",
+            code="503",
+            request_id=request_header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_header.requestId,
+        )

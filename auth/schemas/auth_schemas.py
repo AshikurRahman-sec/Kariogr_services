@@ -71,3 +71,14 @@ class TokenOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+# Firebase Auth Schemas
+class FirebaseAuthRequest(BaseModel):
+    id_token: str
+
+# Token Schemas
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    expires_at: datetime
+
