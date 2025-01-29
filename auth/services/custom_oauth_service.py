@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 
 import database as _database
-import models.oauth_model as _models
+import model.auth_model as _models
 import schemas.oauth_schemas as _schemas
 from kafka_producer import kafka_producer_service
 

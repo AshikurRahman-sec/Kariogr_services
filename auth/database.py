@@ -39,7 +39,7 @@ def create_database():
 
 def get_db():
     # Dependency to get a database session
-    db = SessionLocal.SessionLocal()
+    db = SessionLocal()
     try:
         yield db
     finally:

@@ -6,15 +6,14 @@ from email.mime.text import MIMEText
 
 load_dotenv()
 
-def notification(message):
+async def notification(message):
     try:
         #message = json.loads(message)
         receiver_address = message["email"]
         subject = message["subject"]
         body = message["body"]
-        other = message["other"]
+        
 
-        sender_address = os.environ.get("MAIL_FROM")
         sender_address = os.environ.get("GMAIL_ADDRESS")
         sender_password = os.environ.get("GMAIL_PASSWORD")
         

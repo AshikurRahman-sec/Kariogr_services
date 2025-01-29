@@ -19,6 +19,6 @@ def build_response(data=None, request_id=None, message="OK", code="200"):
             "responseCode": code,
         },
         "meta": {},
-        "body":  data or []
+        "body":  data if data else {}
         
     }

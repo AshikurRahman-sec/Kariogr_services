@@ -2,7 +2,7 @@ import asyncio
 import email_service
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from app.kafka_consumer import kafka_consumer_service
+from kafka_consumer import kafka_consumer_service
 
 # Load environment variables
 load_dotenv()

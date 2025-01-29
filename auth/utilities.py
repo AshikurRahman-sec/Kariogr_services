@@ -4,7 +4,7 @@ from jose import JWTError, jwt
 import sqlalchemy.orm as _orm
 import os
 
-from models import auth_model
+from model import auth_model
 
 
 SECRET_KEY = os.getenv("JWT_SECRET")
