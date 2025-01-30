@@ -1,4 +1,4 @@
-from fastapi import HTTPException, APIRouter, Depends, Request
+from fastapi import HTTPException, APIRouter, Depends, Header
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
@@ -121,14 +121,19 @@ async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="An error occurred while refreshing token")
 
 @router.post("/token/verify", tags=["Auth"])
-async def verify_token(token: str, db: Session = Depends(get_db)):
+async def verify_token(authorization: str = Header(None), db: Session = Depends(get_db)):
     try:
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+        token = authorization.split(" ")[-1].strip()  # Extract the token from "Bearer <token>"
         user_id = await _service.verify_token(db, token)
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
+
         return {"user_id": user_id}
+    
     except HTTPException as e:
-        # Return the HTTP exception raised in the service
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while verifying token")

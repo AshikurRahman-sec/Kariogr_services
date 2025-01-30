@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, HTTPException
 import requests, os
-from dotenv import load_dotenv
 from typing import Union
+from fastapi.security import OAuth2PasswordRequestForm
 
 from schemas import auth_schemas as _schemas
 from utils.response_builder import build_response
 
 
 AUTH_BASE_URL = os.environ.get("AUTH_BASE_URL")
+#AUTH_SERVICE_BASE_URL = os.environ.get("AUTH_BASE_URL")
 
 router = APIRouter()
 
@@ -67,6 +68,7 @@ async def signup_gateway(
 )
 async def login_gateway(
     request_data: _schemas.UserAuthLoginRequestBody,
+    # form_data: OAuth2PasswordRequestForm = Depends()
 ):
     """
     Gateway API to forward the `login` request to the corresponding microservice.
@@ -74,9 +76,22 @@ async def login_gateway(
     try:
         # Extract user details from the request body
         user_data = request_data.body.dict()
+        # user_data = {"email": form_data.username, "password": form_data.password}
 
         # Forward the login request to the microservice
         response = requests.post(f"{AUTH_BASE_URL}/api/login", json=user_data)
+        
+    #     if response.status_code == 200:
+    #             response_data = response.json()
+    #             return response_data  # Return token response directly
+    #     else:
+    #         return {"detail": response.json().get("detail", "Login failed")}
+
+    # except requests.exceptions.ConnectionError:
+    #     raise HTTPException(status_code=503, detail="Auth service unavailable")
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
         # Handle the microservice response
         if response.status_code == 200:
             response_data = response.json()
@@ -204,7 +219,7 @@ async def verify_otp_gateway(
         )
     
 @router.post(
-    "/auth/firebase",
+    "/firebase",
     response_model=Union[_schemas.FirebaseAuthGatewayResponse,_schemas.ErrorResponse],
     tags=["Firebase Auth"],
 )

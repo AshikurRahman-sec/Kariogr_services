@@ -10,3 +10,8 @@ class ServiceIdRequestBody(BaseModel):
     meta: dict = {}
     header: RequestHeader
     body: ServiceId
+
+class ServiceRequestBody(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: dict
