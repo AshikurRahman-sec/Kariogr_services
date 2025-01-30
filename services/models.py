@@ -1,6 +1,7 @@
 import uuid
+import json
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint
+    Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint, Numeric
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -68,3 +69,67 @@ class ServiceDescription(database.Base):
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     service = relationship('Service', back_populates='description')
+
+class BookingInput(database.Base):
+    __tablename__ = "booking_inputs"
+    __table_args__ = (
+        UniqueConstraint("service_id", "field_name", name="uq_booking_input"),
+        {"schema": "karigor"}
+    )
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
+    service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
+    field_name = Column(String, nullable=False, comment="Field key sent to frontend")
+    field_label = Column(String, nullable=False, comment="Human-readable label for UI")
+    field_type = Column(String, nullable=False, comment="Type: text, number, select, datetime, etc.")
+    options = Column(Text, nullable=True, comment="Serialized JSON for dropdown options")
+    required = Column(Boolean, default=True, nullable=False)
+
+    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
+    updated_at = Column(TIMESTAMP, nullable=True, onupdate=datetime.utcnow)
+
+    # Relationship with Service (Back-Populated)
+    service = relationship("Service", back_populates="booking_inputs")
+
+    def set_options(self, options_list):
+        """Store a list of options for select fields as JSON."""
+        self.options = json.dumps(options_list)
+
+    def get_options(self):
+        """Retrieve the list of options from JSON."""
+        return json.loads(self.options) if self.options else []
+    
+class ServicePreference(database.Base):
+    __tablename__ = "user_service_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", "service_id", name="uq_user_service_preference"),
+        {"schema": "karigor"}
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), nullable=False)  # Only store the user_id
+    service_id = Column(UUID(as_uuid=True), ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
+    preference_weight = Column(Numeric(3, 2), nullable=True, comment="User's preference score for a service")
+
+    # Timestamps
+    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)  # Automatically set to current timestamp
+    updated_at = Column(TIMESTAMP, nullable=True, onupdate=datetime.utcnow)  # Updated automatically when modified
+
+    # Relationships
+    service = relationship("Service", back_populates="preferences")
+
+
+class ServiceRecommendation(database.Base):
+    __tablename__ = "service_recommendations"
+    __table_args__ = {"schema": "karigor"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), nullable=False)  # Only store the user_id
+    service_id = Column(UUID(as_uuid=True), ForeignKey("karigor.services.id", ondelete="CASCADE"), index=True, nullable=False)
+    score = Column(Numeric(3, 2), comment="Recommendation score")
+    algorithm_version = Column(String(50), comment="Version of recommendation algorithm used")
+    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)  # Automatically set to current timestamp
+    updated_at = Column(TIMESTAMP, nullable=True, onupdate=datetime.utcnow)  # Updated automatically when modified
+
+    # Relationships
+    service = relationship("Service", back_populates="recommendations")
