@@ -72,17 +72,34 @@ class UserProfile(database.Base):
 class Address(database.Base):
     __tablename__ = 'addresses'
     __table_args__ = {"schema": "karigor"}
+
     address_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey('karigor.user_profiles.profile_id', ondelete="CASCADE"), unique=True)
     street_address = Column(String(255))
-    city = Column(String(100), index=True)
-    state_province = Column(String(100))
-    postal_code = Column(String(20), index=True)
-    country = Column(String(100))
+    division = Column(String(100), index=True)
+    district = Column(String(100), index=True)
+    thana = Column(String(100), index=True)
     latitude = Column(Numeric(9, 6))
     longitude = Column(Numeric(9, 6))
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
     user = relationship("UserProfile", back_populates="address")
+
+class UnregisteredUserAddress(database.Base):
+    __tablename__ = 'unregistered_user_addresses'
+    __table_args__ = {"schema": "karigor"}
+
+    address_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    mobile_id = Column(String(255), nullable=False, index=True, comment="Unique mobile device identifier")
+    street_address = Column(String(255))
+    division = Column(String(100), index=True)
+    district = Column(String(100), index=True)
+    thana = Column(String(100), index=True)
+    latitude = Column(Numeric(9, 6))
+    longitude = Column(Numeric(9, 6))
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
 # WorkerProfile Table
 class WorkerProfile(database.Base):
@@ -158,37 +175,7 @@ class Token(database.Base):
     expires_at = Column(TIMESTAMP)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-# class Service(database.Base):
-#     __tablename__ = 'services'
-#     service_id = Column(Integer, primary_key=True)
-#     name = Column(String(255), unique=True, nullable=False)
-#     category = Column(String(100), index=True)
-#     description = Column(Text)
-#     avg_hourly_rate = Column(Numeric(10, 2))
-    
-#     preferences = relationship("UserServicePreference", back_populates="service")
-#     recommendations = relationship("ServiceRecommendation", back_populates="service")
 
-# class UserServicePreference(database.Base):
-#     __tablename__ = 'user_service_preferences'
-#     user_id = Column(Integer, ForeignKey('user_profiles.profile_id'), primary_key=True)
-#     service_id = Column(Integer, ForeignKey('services.service_id'), primary_key=True)
-#     preference_weight = Column(Numeric(3, 2))
-    
-#     user = relationship("UserProfile", back_populates="service_preferences")
-#     service = relationship("Service", back_populates="preferences")
-
-# class ServiceRecommendation(database.Base):
-#     __tablename__ = 'service_recommendations'
-#     recommendation_id = Column(Integer, primary_key=True)
-#     user_id = Column(Integer, ForeignKey('users.user_id'), index=True)
-#     service_id = Column(Integer, ForeignKey('services.service_id'), index=True)
-#     score = Column(Numeric(3, 2))
-#     algorithm_version = Column(String(50))
-#     created_at = Column(TIMESTAMP, server_default=func.now())
-    
-#     user = relationship("UserAuth")
-#     service = relationship("Service", back_populates="recommendations")
 
 
 

@@ -82,3 +82,5 @@ class TokenResponse(BaseModel):
     refresh_token: str
     expires_at: datetime
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
