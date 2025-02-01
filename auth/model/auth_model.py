@@ -49,7 +49,6 @@ class UserAuth(database.Base):
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     
     role = relationship("Role", back_populates="users")
-    profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 # Token Table
 class Token(database.Base):

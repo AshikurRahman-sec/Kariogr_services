@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from models import *
 import database as _database
 
-from services.route import router as service_router
+from route import router as service_router
 # from kafka_producer import kafka_producer_service
 
 
