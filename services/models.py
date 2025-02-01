@@ -82,7 +82,8 @@ class BookingInput(database.Base):
     )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
-    service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
+    #service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), nullable=False)
     field_name = Column(String, nullable=False, comment="Field key sent to frontend")
     field_label = Column(String, nullable=True, comment="Human-readable label for UI")
     field_type = Column(String, nullable=True, comment="Type: text, number, select, datetime, etc.")
