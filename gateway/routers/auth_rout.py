@@ -230,12 +230,10 @@ async def firebase_auth_gateway(request_data: _schemas.FirebaseAuthGatewayReques
     try:
         # Extract request body and forward to the microservice
         firebase_data = request_data.body.dict()
-        headers = {"Content-Type": "application/json"}
 
         response = requests.post(
             f"{AUTH_BASE_URL}/api/auth/firebase",
             json=firebase_data,
-            headers=headers,
         )
 
         # Handle response from the microservice
@@ -266,4 +264,56 @@ async def firebase_auth_gateway(request_data: _schemas.FirebaseAuthGatewayReques
             message=f"An unexpected error occurred: {str(e)}",
             code="500",
             request_id=request_data.header.requestId,
+        )
+    
+@router.post(
+    "/token/refresh",
+    tags=["Auth"],
+    response_model=Union[_schemas.TokenOut, _schemas.ErrorResponse],
+)
+async def refresh_token_gateway(request_data: _schemas.RefreshTokenRequestBody):
+    """
+    Gateway API to forward the `refresh_token` request to the corresponding microservice.
+    """
+    try:
+        # Extract refresh token from request body
+        refresh_token = request_data.body.refresh_token
+        request_id = request_data.header.requestId
+
+        # Forward the request to the microservice
+        response = requests.post(
+            f"{AUTH_BASE_URL}/api/token/refresh",
+            json={"refresh_token": refresh_token},  # Send as JSON in the request body
+        )
+
+        # Handle the microservice response
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_id,
+                message="Token refreshed successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_id,
+                message=response.json().get("detail"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        return build_response(
+            data={},
+            message="Auth service is unavailable",
+            code="503",
+            request_id=request_id,
+        )
+    except Exception as e:
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_id,
         )

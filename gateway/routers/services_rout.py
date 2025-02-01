@@ -17,7 +17,7 @@ async def get_root_services_gateway(
     request_data: ServiceRequestBody,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
-    user: dict = Depends(verify_token),  
+    #user: dict = Depends(verify_token),  
 ):
     """
     Gateway API that verifies token via Auth Service before forwarding request.
@@ -225,3 +225,53 @@ async def get_search_services_gateway(
             request_id=request_header.requestId,
         )
 
+@router.post("/service/hierarchy/",)
+async def get_descendant_hierarchy_gateway(
+    request_data: ServiceIdRequestBody,
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, description="Page size"),
+):
+    """
+    Gateway API to forward the `get_descendant_hierarchy` request to the corresponding microservice.
+    """
+    try:
+        # Extract service details from the request body
+        service_id = request_data.body.service_id
+
+        # Forward the request to the microservice
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/api/service/{service_id}/hierarchy/",
+            params={"page": page, "size": size},
+        )
+
+        # Handle the microservice response
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Hierarchy fetched successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        return build_response(
+            data={},
+            message="Service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )

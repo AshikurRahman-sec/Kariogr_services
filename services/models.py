@@ -67,6 +67,7 @@ class ServiceDescription(database.Base):
     __table_args__ = {"schema": "karigor"}
 
     service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    language_code = Column(String(10), primary_key=True) # e.g., 'en', 'bn', 'fr'
     description = Column(Text, nullable=False)  # Store HTML data
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -101,7 +102,7 @@ class BookingInput(database.Base):
     def get_options(self):
         """Retrieve the list of options from JSON."""
         return json.loads(self.options) if self.options else []
-    
+     
 class ServicePreference(database.Base):
     __tablename__ = "user_service_preferences"
     __table_args__ = (
@@ -109,7 +110,7 @@ class ServicePreference(database.Base):
         {"schema": "karigor"}
     )
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(UUID(as_uuid=True), nullable=False)  # Only store the user_id
     service_id = Column(UUID(as_uuid=True), ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
     preference_weight = Column(Numeric(3, 2), nullable=True, comment="User's preference score for a service")
@@ -125,7 +126,7 @@ class ServiceRecommendation(database.Base):
     __tablename__ = "service_recommendations"
     __table_args__ = {"schema": "karigor"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(UUID(as_uuid=True), nullable=False)  # Only store the user_id
     service_id = Column(UUID(as_uuid=True), ForeignKey("karigor.services.id", ondelete="CASCADE"), index=True, nullable=False)
     score = Column(Numeric(3, 2), comment="Recommendation score")

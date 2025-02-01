@@ -89,13 +89,16 @@ async def verify_otp(userdata: VerifyOtp, db: Session = Depends(get_db)):
 @router.post("/token/refresh", response_model=_schemas.TokenOut, tags=["Auth"])
 async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     try:
-        result = await db.execute(select(_model.Token).where(_model.Token.refresh_token == refresh_token))
+        refresh_token = request.refresh_token  # Extract from request body
+        result = db.execute(select(_model.Token).where(_model.Token.refresh_token == refresh_token))
         db_token = result.scalars().first()
+        
         if not db_token or db_token.expires_at < datetime.utcnow():
             raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
         return await _service.create_tokens(db, db_token.user_id)
+
     except HTTPException as e:
-        # Return the HTTP exception raised in the service
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while refreshing token")

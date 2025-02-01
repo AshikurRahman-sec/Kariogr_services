@@ -110,3 +110,11 @@ class FirebaseAuthGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict
     body: TokenResponse
+
+class RefreshTokenBody(BaseModel):
+    refresh_token: str
+
+class RefreshTokenRequestBody(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: RefreshTokenBody
