@@ -1,8 +1,11 @@
 import sqlalchemy as _sql
 import sqlalchemy.ext.declarative as _declarative
 import sqlalchemy.orm as _orm
+from dotenv import load_dotenv
 import os
 
+# Load environment variables from .env file
+load_dotenv()
 
 # Retrieve environment variables for postgres
 postgres_host = os.environ.get("POSTGRES_HOST")
