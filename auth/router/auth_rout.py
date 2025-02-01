@@ -86,26 +86,6 @@ async def verify_otp(userdata: VerifyOtp, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while verifying OTP")
     
-@router.put("/user/profile", response_model=_schemas.UserProfileOut, tags=["Auth"])
-async def update_user_profile(user_id: str, profile_data: _schemas.UserProfileUpdate, db: Session = Depends(get_db)):
-    try:
-        return await _service.update_user_profile(db, user_id, profile_data)
-    except HTTPException as e:
-        # Return the HTTP exception raised in the service
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="An error occurred while updating user profile")
-
-@router.put("/worker/profile", response_model=_schemas.WorkerProfileOut, tags=["Auth"])
-async def update_worker_profile(user_id: str, profile_data: _schemas.WorkerProfileUpdate, db: Session = Depends(get_db)):
-    try:
-        return await _service.update_worker_profile(db, user_id, profile_data)
-    except HTTPException as e:
-        # Return the HTTP exception raised in the service
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="An error occurred while updating worker profile")
-
 @router.post("/token/refresh", response_model=_schemas.TokenOut, tags=["Auth"])
 async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     try:

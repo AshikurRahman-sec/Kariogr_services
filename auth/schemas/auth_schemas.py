@@ -20,42 +20,6 @@ class UserAuthOut(BaseModel):
     class Config:
         orm_mode = True
 
-# UserProfile Schemas
-class UserProfileUpdate(BaseModel):
-    first_name: Optional[str]
-    last_name: Optional[str]
-    phone_number: Optional[str]
-    date_of_birth: Optional[datetime]
-    profile_picture_url: Optional[str]
-
-class UserProfileOut(BaseModel):
-    profile_id: str
-    user_id: str
-    first_name: str
-    last_name: str
-    phone_number: Optional[str]
-    date_of_birth: Optional[datetime]
-    profile_picture_url: Optional[str]
-
-    class Config:
-        orm_mode = True
-
-# WorkerProfile Schemas
-class WorkerProfileUpdate(BaseModel):
-    hourly_rate: Optional[float]
-    availability_status: Optional[str]
-    bio: Optional[str]
-
-class WorkerProfileOut(BaseModel):
-    worker_id: str
-    user_id: str
-    hourly_rate: Optional[float]
-    availability_status: Optional[str]
-    bio: Optional[str]
-
-    class Config:
-        orm_mode = True
-
 # Token Schemas
 class TokenCreate(BaseModel):
     access_token: str

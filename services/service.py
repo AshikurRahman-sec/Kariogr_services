@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, desc
 from uuid import UUID
 
-from models import Service, ServiceLogo,  ServiceDescription
+from models import *
 
 
 def get_root_services(db: Session, offset: int, limit: int):
@@ -245,3 +245,83 @@ def get_search_services(db: Session, offset: int, limit: int):
         "data": formatted_data,
         "total_count": total_count,
     }
+
+async def get_booking_inputs_by_service(db: Session, service_id: str):
+    booking_inputs = (
+        db.query(BookingInput)
+        .filter(BookingInput.service_id == service_id)
+        .all()
+    )
+    return booking_inputs
+
+async def get_service_relatives(db: Session, service_id: str, limit: int = 10, offset: int = 0):
+    # Fetch the given service
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        return None
+
+    # Fetch parent service ID (if exists)
+    parent_id = service.parent.id if service.parent else None
+
+    # Paginated children ordered by updated_at DESC
+    children = (
+        db.query(Service)
+        .filter(Service.parent_id == parent_id)
+        .order_by(desc(Service.updated_at))
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+
+    # Extract only required fields
+    def get_logo(service):
+        return service.logo[0].image_url if service.logo else None
+
+    return {
+        "parent_id": parent_id,
+        "children": [
+            {
+                "id": child.id,
+                "parent_id": child.parent_id,
+                "image_url": get_logo(child),
+            }
+            for child in children
+        ]
+    }
+
+async def get_all_second_level_services(db: Session, limit: int = 10, offset: int = 0):
+    # Find paginated 2nd-level services
+    second_level_services = (
+        db.query(Service)
+        .filter(Service.level == 2)
+        .order_by(desc(Service.updated_at))
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+
+    # Get up to 5 children for each 2nd-level service
+    second_level_with_children = []
+    for service in second_level_services:
+        children = (
+            db.query(Service)
+            .filter(Service.parent_id == service.id)
+            .order_by(desc(Service.updated_at))
+            .limit(5)
+            .all()
+        )
+
+        second_level_with_children.append({
+            "id": service.id,
+            "name": service.name,
+            "children": [
+                {
+                    "id": child.id,
+                    "name": child.name,
+                    "image_url": child.logo[0].image_url if child.logo else None
+                }
+                for child in children
+            ]
+        })
+
+    return second_level_with_children

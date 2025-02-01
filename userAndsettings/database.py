@@ -10,12 +10,6 @@ postgres_db = os.environ.get("POSTGRES_DB")
 postgres_user = os.environ.get("POSTGRES_USER")
 postgres_password = os.environ.get("POSTGRES_PASSWORD")
 
-# Retrieve environment variables for mysql
-mysql_host = os.environ.get("MYSQL_HOST")
-mysql_db = os.environ.get("MYSQL_DB")
-mysql_user = os.environ.get("MYSQL_USER")
-mysql_password = os.environ.get("MYSQL_PASSWORD")
-mysql_port = os.environ.get("MYSQL_PORT")
 
 
 # PostgreSQL server connection url'

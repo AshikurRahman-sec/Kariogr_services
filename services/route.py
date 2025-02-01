@@ -2,8 +2,8 @@ from fastapi import HTTPException, APIRouter, Depends, Request, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime
+from typing import List
 from uuid import UUID
-import pika
 import logging
 
 from database import get_db
@@ -187,3 +187,50 @@ def get_search_services(
             status_code=500,
             detail=f"An unexpected error occurred: {str(e)}"
         )
+    
+@router.get("booking_inputs/{service_id}", response_model=List[_schemas.BookingInputOut])
+async def get_booking_inputs_by_service(service_id: str, db: Session = Depends(get_db)):
+    try:
+        booking_inputs = await services.get_booking_inputs_by_service(db, service_id)
+        if not booking_inputs:
+            raise HTTPException(status_code=404, detail="No booking inputs found for this service")
+        return booking_inputs
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        logging.error(f"Error fetching booking inputs: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching booking inputs")
+    
+@router.get("/{service_id}/relatives", response_model=_schemas.ServiceRelativesOut)
+async def get_service_relatives(
+    service_id: str,
+    limit: int = Query(10, ge=1, le=100),  # Pagination limit (1-100)
+    offset: int = Query(0, ge=0),  # Offset for pagination
+    db: Session = Depends(get_db)
+):
+    try:
+        relatives = await services.get_service_relatives(db, service_id, limit, offset)
+        if not relatives:
+            raise HTTPException(status_code=404, detail="Service not found")
+        return relatives
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        logging.error(f"Error fetching service relatives: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching service relatives")
+    
+@router.get("/second-level", response_model=_schemas.ServiceHierarchyOut)
+async def get_all_second_level_services(
+    limit: int = Query(10, ge=1, le=100),  # Pagination limit
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
+):
+    try:
+        services = await services.get_all_second_level_services(db, limit, offset)
+        return {"services": services}
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        logging.error(f"Error fetching 2nd-level services: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching services")
+

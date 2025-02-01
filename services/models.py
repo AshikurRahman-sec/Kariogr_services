@@ -1,7 +1,7 @@
 import uuid
 import json
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint, Numeric
+    Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint, Numeric, func
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -32,6 +32,9 @@ class Service(database.Base):
 
     descendants = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.ancestor_id', back_populates='ancestor', cascade="all, delete-orphan")
     ancestors = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.descendant_id', back_populates='descendant', cascade="all, delete-orphan")
+    
+    # Relationship with OfferService table
+    offers = relationship("OfferService", back_populates="service", cascade="all, delete-orphan")
 
 class ServiceHierarchy(database.Base):
     __tablename__ = 'service_hierarchy'
@@ -80,8 +83,8 @@ class BookingInput(database.Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
     service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
     field_name = Column(String, nullable=False, comment="Field key sent to frontend")
-    field_label = Column(String, nullable=False, comment="Human-readable label for UI")
-    field_type = Column(String, nullable=False, comment="Type: text, number, select, datetime, etc.")
+    field_label = Column(String, nullable=True, comment="Human-readable label for UI")
+    field_type = Column(String, nullable=True, comment="Type: text, number, select, datetime, etc.")
     options = Column(Text, nullable=True, comment="Serialized JSON for dropdown options")
     required = Column(Boolean, default=True, nullable=False)
 
@@ -118,7 +121,6 @@ class ServicePreference(database.Base):
     # Relationships
     service = relationship("Service", back_populates="preferences")
 
-
 class ServiceRecommendation(database.Base):
     __tablename__ = "service_recommendations"
     __table_args__ = {"schema": "karigor"}
@@ -133,3 +135,18 @@ class ServiceRecommendation(database.Base):
 
     # Relationships
     service = relationship("Service", back_populates="recommendations")
+
+class OfferService(database.Base):
+    __tablename__ = 'offer_services'
+    __table_args__ = {"schema": "karigor"}
+
+    offer_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(255), nullable=False, index=True)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete="CASCADE"), nullable=False, index=True)
+    image_url = Column(String(500), nullable=True)
+    status = Column(String(20), nullable=False, default="active")
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+    # Relationship with Service table
+    service = relationship("Service", back_populates="offers")
