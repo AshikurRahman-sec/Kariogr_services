@@ -36,7 +36,7 @@ class Service(database.Base):
     # Relationships
     offers = relationship("OfferService", back_populates="service", cascade="all, delete-orphan")
     booking_inputs = relationship("BookingInput", back_populates="service", cascade="all, delete-orphan")
-    special_services = relationship("SpecialService", back_populates="service", cascade="all, delete-orphan")
+    recommendations = relationship("ServiceRecommendation", back_populates="service", cascade="all, delete-orphan")
     preferred_services = relationship("PreferredService", back_populates="service", cascade="all, delete-orphan")
 
 class ServiceHierarchy(database.Base):
