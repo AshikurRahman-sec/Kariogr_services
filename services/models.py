@@ -73,6 +73,8 @@ class ServiceDescription(database.Base):
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     service = relationship('Service', back_populates='description')
+    # Relationship with BookingInput (Back-Populated)
+    booking_inputs = relationship("BookingInput", back_populates="service", cascade="all, delete-orphan")
 
 class BookingInput(database.Base):
     __tablename__ = "booking_inputs"
