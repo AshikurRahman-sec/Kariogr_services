@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 import database as _database
+from router.user_route import router as user_router
 
 
 # from kafka_producer import kafka_producer_service
@@ -42,4 +43,4 @@ async def on_startup():
 async def check_api():
     return {"status": "Connected to API Successfully"}
 
-app.include_router(service_router, prefix="/api", tags=["Services"])
+app.include_router(user_router, prefix="/api",tags=["User"])

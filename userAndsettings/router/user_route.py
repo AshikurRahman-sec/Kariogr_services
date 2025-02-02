@@ -12,7 +12,7 @@ import services.user_service as _service
 
 router = APIRouter()
 
-@router.put("/user/profile", response_model=_schemas.UserProfileOut, tags=["Auth"])
+@router.put("/user/profile", response_model=_schemas.UserProfileOut,)
 async def update_user_profile(user_id: str, profile_data: _schemas.UserProfileUpdate, db: Session = Depends(get_db)):
     try:
         return await _service.update_user_profile(db, user_id, profile_data)
@@ -22,7 +22,7 @@ async def update_user_profile(user_id: str, profile_data: _schemas.UserProfileUp
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while updating user profile")
 
-@router.put("/worker/profile", response_model=_schemas.WorkerProfileOut, tags=["Auth"])
+@router.put("/worker/profile", response_model=_schemas.WorkerProfileOut,)
 async def update_worker_profile(user_id: str, profile_data: _schemas.WorkerProfileUpdate, db: Session = Depends(get_db)):
     try:
         return await _service.update_worker_profile(db, user_id, profile_data)
@@ -32,7 +32,7 @@ async def update_worker_profile(user_id: str, profile_data: _schemas.WorkerProfi
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while updating worker profile")
     
-@router.post("/addresses", response_model=_schemas.UnregisteredUserAddressOut, tags=["Addresses"])
+@router.post("/addresses", response_model=_schemas.UnregisteredUserAddressOut,)
 async def create_address(address: _schemas.UnregisteredUserAddressCreate, db: Session = Depends(get_db)):
     try:
         return await _service.create_address(db, address)
@@ -40,7 +40,7 @@ async def create_address(address: _schemas.UnregisteredUserAddressCreate, db: Se
         logging.error(f"Error creating address: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while creating the address")
     
-@router.get("/worker_zones/{skill_id}", response_model=list[_schemas.WorkerZoneOut], tags=["Worker Zones"])
+@router.get("/worker_zones/{skill_id}", response_model=list[_schemas.WorkerZoneOut],)
 async def get_worker_zones_by_skill(skill_id: str, db: Session = Depends(get_db)):
     try:
         return await _service.get_worker_zones_by_skill(db, skill_id)
