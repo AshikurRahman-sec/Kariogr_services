@@ -47,3 +47,19 @@ class UnregisteredUserAddressCreate(BaseModel):
     thana: Optional[str] = None
     latitude: Optional[Decimal] = None
     longitude: Optional[Decimal] = None
+
+class UnregisteredUserAddressOut(UnregisteredUserAddressCreate):
+    address_id: str
+
+class WorkerZoneOut(BaseModel):
+    worker_zone_id: str
+    worker_id: str
+    division: str
+    district: str
+    thana: str
+    road_number: Optional[str] = None
+    latitude: Optional[Decimal] = None
+    longitude: Optional[Decimal] = None
+
+    class Config:
+        orm_mode = True

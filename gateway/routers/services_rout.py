@@ -17,7 +17,7 @@ async def get_root_services_gateway(
     request_data: ServiceRequestBody,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
-    #user: dict = Depends(verify_token),  
+    user: dict = Depends(verify_token),  
 ):
     """
     Gateway API that verifies token via Auth Service before forwarding request.
@@ -275,3 +275,125 @@ async def get_descendant_hierarchy_gateway(
             code="500",
             request_id=request_data.header.requestId,
         )
+
+@router.post("/booking_inputs/")
+async def get_booking_inputs_by_service_gateway(
+    request_data: ServiceIdRequestBody,  # Use the correct request body structure
+    user: dict = Depends(verify_token),
+):
+    """
+    Gateway API that verifies token via Auth Service before forwarding request.
+    """
+
+    try:
+        service_id = request_data.body.service_id  # Extract service_id correctly
+        if not service_id:
+            return build_response(
+                message="Missing 'service_id' in request body",
+                code="400",
+                request_id=request_data.header.requestId,
+            )
+
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/api/booking_inputs/{service_id}"  # Forward service_id in the URL
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        else:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        return build_response(message="Service is unavailable", code="503", request_id=request_data.header.requestId)
+    except Exception as e:
+        return build_response(message=f"Unexpected error: {str(e)}", code="500", request_id=request_data.header.requestId)
+    
+@router.post("/service_relatives/")
+async def get_service_relatives_gateway(
+    request_data: ServiceIdRequestBody,  # Use structured request body
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, le=100, description="Page size"),
+    user: dict = Depends(verify_token),
+):
+    """
+    Gateway API that verifies token via Auth Service before forwarding request.
+    """
+
+    try:
+        service_id = request_data.body.service_id  # Extract service_id from request body
+        if not service_id:
+            return build_response(
+                message="Missing 'service_id' in request body",
+                code="400",
+                request_id=request_data.header.requestId,
+            )
+
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/api/{service_id}/relatives",
+            params={"page": page, "size": size},  # Pass page and size as query parameters
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        else:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        return build_response(message="Service is unavailable", code="503", request_id=request_data.header.requestId)
+    except Exception as e:
+        return build_response(message=f"Unexpected error: {str(e)}", code="500", request_id=request_data.header.requestId)
+
+@router.post("/second-level-services/")
+async def get_all_second_level_services_gateway(
+    request_data: ServiceRequestBody,  # Standard request body structure
+    limit: int = Query(10, ge=1, le=100, description="Pagination limit"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    user: dict = Depends(verify_token),
+):
+    """
+    Gateway API that verifies token via Auth Service before forwarding request.
+    """
+
+    try:
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/api/second-level",
+            params={"limit": limit, "offset": offset},  # Pass pagination as query parameters
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Request successful",
+                code="200",
+            )
+        else:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Error from microservice",
+                code=str(response.status_code),
+            )
+    except requests.exceptions.ConnectionError:
+        return build_response(message="Service is unavailable", code="503", request_id=request_data.header.requestId)
+    except Exception as e:
+        return build_response(message=f"Unexpected error: {str(e)}", code="500", request_id=request_data.header.requestId)
+

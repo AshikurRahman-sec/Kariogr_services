@@ -8,8 +8,9 @@ import database
 
 # Enum for Booking Type
 class BookingType(pyEnum):
-    WEEKLY = "one"
-    MONTHLY = "two"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    ONETIME = "onetime"
 
 class Booking(database.Base):
     __tablename__ = "bookings"

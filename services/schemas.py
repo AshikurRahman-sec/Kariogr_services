@@ -20,7 +20,6 @@ class BookingInputBase(BaseModel):
 
 class BookingInputOut(BookingInputBase):
     id: str
-
     class Config:
         from_attributes = True
 

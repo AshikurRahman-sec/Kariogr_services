@@ -8,6 +8,8 @@ import json
 class BookingType(str, Enum):
     WEEKLY = "weekly"
     MONTHLY = "monthly"
+    ONETIME = "onetime"
+
 
 class BookingBase(BaseModel):
     service_area: str = Field(..., example="Mirpur")

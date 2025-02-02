@@ -16,7 +16,7 @@ class Service(database.Base):
         {"schema": "karigor"}
     )
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     parent_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='SET NULL'), nullable=True)
     name = Column(String(255), nullable=False)
     level = Column(Integer, nullable=False)
@@ -43,8 +43,8 @@ class ServiceHierarchy(database.Base):
         {"schema": "karigor"}
     )
 
-    ancestor_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
-    descendant_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    ancestor_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), primary_key=True)
+    descendant_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), primary_key=True)
     depth = Column(Integer, nullable=False)
 
     ancestor = relationship('Service', foreign_keys=[ancestor_id], back_populates='descendants')
@@ -54,7 +54,7 @@ class ServiceLogo(database.Base):
     __tablename__ = 'service_logos'
     __table_args__ = {"schema": "karigor"}
 
-    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), primary_key=True)
     image_url = Column(Text, nullable=True)  # URL for externally stored images
     logo_data = Column(Text, nullable=True)  # Base64 or binary for database-stored logos
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
@@ -66,7 +66,7 @@ class ServiceDescription(database.Base):
     __tablename__ = 'service_descriptions'
     __table_args__ = {"schema": "karigor"}
 
-    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), primary_key=True)
+    service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), primary_key=True)
     language_code = Column(String(10), primary_key=True) # e.g., 'en', 'bn', 'fr'
     description = Column(Text, nullable=False)  # Store HTML data
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
@@ -82,8 +82,7 @@ class BookingInput(database.Base):
     )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
-    #service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
-    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='CASCADE'), nullable=False)
+    service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
     field_name = Column(String, nullable=False, comment="Field key sent to frontend")
     field_label = Column(String, nullable=True, comment="Human-readable label for UI")
     field_type = Column(String, nullable=True, comment="Type: text, number, select, datetime, etc.")

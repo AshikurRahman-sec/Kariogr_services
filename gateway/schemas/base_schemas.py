@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-
-
 class RequestHeader(BaseModel):
     requestId: str
     requestClient: str
@@ -23,3 +21,12 @@ class ResponseHeader(BaseModel):
     responseMessage: str
     responseProcessingTimeInMs: int
     responseCode: str
+
+class ErrorResponseBody(BaseModel):
+    status_code: str
+    detail: str
+
+class ErrorResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict
+    body: dict

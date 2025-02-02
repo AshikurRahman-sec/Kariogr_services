@@ -26,15 +26,17 @@ class UserProfile(database.Base):
 class Address(database.Base):
     __tablename__ = 'addresses'
     __table_args__ = {"schema": "karigor"}
+
     address_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey('karigor.user_profiles.profile_id', ondelete="CASCADE"), unique=True)
     street_address = Column(String(255))
-    city = Column(String(100), index=True)
-    state_province = Column(String(100))
-    postal_code = Column(String(20), index=True)
-    country = Column(String(100))
+    division = Column(String(100), index=True)
+    district = Column(String(100), index=True)
+    thana = Column(String(100), index=True)
     latitude = Column(Numeric(9, 6))
     longitude = Column(Numeric(9, 6))
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
     user = relationship("UserProfile", back_populates="address")
 
@@ -113,3 +115,23 @@ class UnregisteredUserAddress(database.Base):
     longitude = Column(Numeric(9, 6))
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+# WorkerZone Table (New Table for Worker Locations)
+class WorkerZone(database.Base):
+    __tablename__ = 'worker_zones'
+    __table_args__ = {"schema": "karigor"}
+
+    worker_zone_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    worker_id = Column(String(36), ForeignKey('karigor.worker_profiles.worker_id', ondelete="CASCADE"), index=True)
+    division = Column(String(100), index=True)
+    district = Column(String(100), index=True)
+    thana = Column(String(100), index=True)
+    road_number = Column(String(50), nullable=True)
+    latitude = Column(Numeric(9, 6), nullable=True)
+    longitude = Column(Numeric(9, 6), nullable=True)
+
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    deleted_at = Column(TIMESTAMP, nullable=True)  # Soft delete
+
+    worker = relationship("WorkerProfile", back_populates="working_zones")

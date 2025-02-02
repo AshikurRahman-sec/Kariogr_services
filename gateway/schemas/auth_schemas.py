@@ -1,17 +1,8 @@
 from pydantic import BaseModel, EmailStr
-from schemas.base_schemas import RequestHeader, ResponseHeader
+from schemas.base_schemas import RequestHeader, ResponseHeader, ErrorResponse
 from datetime import datetime
 from typing import Optional
 
-
-class ErrorResponseBody(BaseModel):
-    status_code: str
-    detail: str
-
-class ErrorResponse(BaseModel):
-    header: ResponseHeader
-    meta: dict
-    body: dict
 
 class UserAuth(BaseModel):
     email: str

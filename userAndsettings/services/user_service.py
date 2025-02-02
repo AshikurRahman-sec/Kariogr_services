@@ -36,3 +36,13 @@ async def create_address(db: _orm.Session, address: _schemas.UnregisteredUserAdd
     db.commit()
     db.refresh(db_address)
     return db_address
+
+async def get_worker_zones_by_skill(db: _orm.Session, skill_id: str):
+    worker_zones = (
+        db.query(_model.WorkerZone)
+        .join(_model.WorkerProfile, _model.WorkerZone.worker_id == _model.WorkerProfile.worker_id)
+        .join(_model.WorkerSkill, _model.WorkerProfile.worker_id == _model.WorkerSkill.worker_id)
+        .filter(_model.WorkerSkill.skill_id == skill_id)
+        .all()
+    )
+    return worker_zones
