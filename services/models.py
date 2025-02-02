@@ -123,7 +123,7 @@ class ServicePreference(database.Base):
     updated_at = Column(TIMESTAMP, nullable=True, onupdate=datetime.utcnow)  # Updated automatically when modified
 
     # Relationships
-    service = relationship("Service", back_populates="preferences")
+    service = relationship("Service", back_populates="preferred_services")
 
 class ServiceRecommendation(database.Base):
     __tablename__ = "service_recommendations"
