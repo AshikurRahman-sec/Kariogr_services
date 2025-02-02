@@ -5,7 +5,7 @@ import os
 
 import schemas.paymentAndbooking_schemas as _schemas
 from dependencies import verify_token
-from utils import build_response
+from utils.response_builder import build_response
 
 PAYMENT_AND_BOOKING_BASE_URL = os.environ.get("PAYMENT_AND_BOOKING_BASE_URL")
 

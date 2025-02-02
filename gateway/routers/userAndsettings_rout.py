@@ -5,7 +5,7 @@ import logging
 import os
 
 import schemas.userAndsetting_schemas as _schemas
-from utils import build_response  # Ensure this function is available
+from utils.response_builder import build_response  # Ensure this function is available
 from dependencies import verify_token
 
 USER_SETTINGS_BASE_URL = os.environ.get("AUTH_BASE_URL")
