@@ -35,6 +35,8 @@ class Service(database.Base):
     
     # Relationship with OfferService table
     offers = relationship("OfferService", back_populates="service", cascade="all, delete-orphan")
+    # Relationship with BookingInput (Back-Populated)
+    booking_inputs = relationship("BookingInput", back_populates="service", cascade="all, delete-orphan")
 
 class ServiceHierarchy(database.Base):
     __tablename__ = 'service_hierarchy'
@@ -73,8 +75,6 @@ class ServiceDescription(database.Base):
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     service = relationship('Service', back_populates='description')
-    # Relationship with BookingInput (Back-Populated)
-    booking_inputs = relationship("BookingInput", back_populates="service", cascade="all, delete-orphan")
 
 class BookingInput(database.Base):
     __tablename__ = "booking_inputs"
