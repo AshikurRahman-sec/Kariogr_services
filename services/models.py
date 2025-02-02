@@ -17,7 +17,7 @@ class Service(database.Base):
     )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    parent_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete='SET NULL'), nullable=True)
+    parent_id = Column(String, ForeignKey('karigor.services.id', ondelete='SET NULL'), nullable=True)
     name = Column(String(255), nullable=False)
     level = Column(Integer, nullable=False)
     is_leaf = Column(Boolean, default=False, server_default='false', nullable=False)
@@ -111,8 +111,8 @@ class ServicePreference(database.Base):
     )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(UUID(as_uuid=True), nullable=False)  # Only store the user_id
-    service_id = Column(UUID(as_uuid=True), ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(String, nullable=False)  # Only store the user_id
+    service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), nullable=False)
     preference_weight = Column(Numeric(3, 2), nullable=True, comment="User's preference score for a service")
 
     # Timestamps
@@ -127,8 +127,8 @@ class ServiceRecommendation(database.Base):
     __table_args__ = {"schema": "karigor"}
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(UUID(as_uuid=True), nullable=False)  # Only store the user_id
-    service_id = Column(UUID(as_uuid=True), ForeignKey("karigor.services.id", ondelete="CASCADE"), index=True, nullable=False)
+    user_id = Column(String, nullable=False)  # Only store the user_id
+    service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), index=True, nullable=False)
     score = Column(Numeric(3, 2), comment="Recommendation score")
     algorithm_version = Column(String(50), comment="Version of recommendation algorithm used")
     created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)  # Automatically set to current timestamp
@@ -143,7 +143,7 @@ class OfferService(database.Base):
 
     offer_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(255), nullable=False, index=True)
-    service_id = Column(UUID(as_uuid=True), ForeignKey('karigor.services.id', ondelete="CASCADE"), nullable=False, index=True)
+    service_id = Column(String, ForeignKey('karigor.services.id', ondelete="CASCADE"), nullable=False, index=True)
     image_url = Column(String(500), nullable=True)
     status = Column(String(20), nullable=False, default="active")
     created_at = Column(TIMESTAMP, server_default=func.now())
