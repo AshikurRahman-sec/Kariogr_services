@@ -83,22 +83,6 @@ async def login_user(db: _orm.Session, user: _schemas.UserAuthLogin):
         )
     return db_user
 
-def update_user_profile(db: _orm.Session, user_id: str, profile_data: _schemas.UserProfileUpdate):
-    db_profile = db.query(_model.UserProfile).filter(_model.UserProfile.user_id == user_id).first()
-    for key, value in profile_data.dict(exclude_unset=True).items():
-        setattr(db_profile, key, value)
-    db.commit()
-    db.refresh(db_profile)
-    return db_profile
-
-def update_worker_profile(db: _orm.Session, user_id: str, profile_data: _schemas.WorkerProfileUpdate):
-    db_worker = db.query(_model.WorkerProfile).filter(_model.WorkerProfile.user_id == user_id).first()
-    for key, value in profile_data.dict(exclude_unset=True).items():
-        setattr(db_worker, key, value)
-    db.commit()
-    db.refresh(db_worker)
-    return db_worker
-
 async def create_tokens(db: _orm.Session, user_id: str):
     access_token = create_access_token({"user_id": user_id}, expires_delta=timedelta(minutes=15))
     refresh_token = str(uuid4())
