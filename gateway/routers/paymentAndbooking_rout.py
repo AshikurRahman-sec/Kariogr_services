@@ -13,7 +13,6 @@ router = APIRouter()
 
 @router.post(
     "/bookings",
-    tags=["Bookings"],
     response_model=_schemas.BookingResponse
 )
 async def get_booking_gateway(

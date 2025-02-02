@@ -14,7 +14,6 @@ router = APIRouter()
 
 @router.post(
     "/addresses",
-    tags=["Addresses"],
     response_model=Union[_schemas.AddressResponse, _schemas.ErrorResponse],
 )
 async def create_address_gateway(request_data: _schemas.AddressRequestBody):
@@ -62,7 +61,6 @@ async def create_address_gateway(request_data: _schemas.AddressRequestBody):
 
 @router.post(
     "/worker-zones",
-    tags=["Worker Zones"],
     response_model=_schemas.WorkerZoneResponse
 )
 async def get_worker_zones_gateway(
