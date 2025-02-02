@@ -226,8 +226,8 @@ async def get_all_second_level_services(
     db: Session = Depends(get_db)
 ):
     try:
-        services = await services.get_all_second_level_services(db, limit, offset)
-        return {"services": services}
+        second_level_services = await services.get_all_second_level_services(db, limit, offset)
+        return {"services": second_level_services}
     except HTTPException as exc:
         raise exc
     except Exception as e:
