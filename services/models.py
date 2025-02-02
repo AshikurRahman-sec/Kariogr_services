@@ -33,10 +33,11 @@ class Service(database.Base):
     descendants = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.ancestor_id', back_populates='ancestor', cascade="all, delete-orphan")
     ancestors = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.descendant_id', back_populates='descendant', cascade="all, delete-orphan")
     
-    # Relationship with OfferService table
+    # Relationships
     offers = relationship("OfferService", back_populates="service", cascade="all, delete-orphan")
-    # Relationship with BookingInput (Back-Populated)
     booking_inputs = relationship("BookingInput", back_populates="service", cascade="all, delete-orphan")
+    special_services = relationship("SpecialService", back_populates="service", cascade="all, delete-orphan")
+    preferred_services = relationship("PreferredService", back_populates="service", cascade="all, delete-orphan")
 
 class ServiceHierarchy(database.Base):
     __tablename__ = 'service_hierarchy'
