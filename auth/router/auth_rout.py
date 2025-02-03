@@ -89,7 +89,6 @@ async def verify_otp(userdata: VerifyOtp, db: Session = Depends(get_db)):
 @router.post("/token/refresh",response_model=_schemas.TokenOut, tags=["Auth"])
 async def refresh_token(request: _schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
     try:
-        result = await db.execute(select(_model.Token).where(_model.Token.refresh_token == refresh_token))
         refresh_token = request.refresh_token  # Extract from request body
         result = db.execute(select(_model.Token).where(_model.Token.refresh_token == refresh_token))
         db_token = result.scalars().first()
