@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 
 
-@router.post("/", response_model=_schemas.BookingResponse, tags=["Bookings"], status_code=status.HTTP_201_CREATED)
+@router.post("/create-booking", response_model=_schemas.BookingResponse, tags=["Bookings"], status_code=status.HTTP_201_CREATED)
 async def create_booking_handler(booking_data: _schemas.BookingCreate, db: Session = Depends(get_db)):
 
     #return await _service.create_booking(db, booking_data)
