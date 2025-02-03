@@ -39,6 +39,7 @@ class ServiceRelativesOut(BaseModel):
 class ServiceChildOut(BaseModel):
     id: str
     name: str
+    is_leaf: bool
     image_url: Optional[str] = None
 
     class Config:
@@ -47,6 +48,7 @@ class ServiceChildOut(BaseModel):
 class SecondLevelServiceOut(BaseModel):
     id: str
     name: str
+    is_leaf: bool
     children: List[ServiceChildOut] = []
 
 class ServiceHierarchyOut(BaseModel):

@@ -54,6 +54,7 @@ async def get_second_level_services_gateway(
     request_data: ServiceIdRequestBody,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
+    user: dict = Depends(verify_token), 
 ):
     """
     Gateway API to forward the `get_second_level_services` request to the corresponding microservice.
@@ -105,14 +106,15 @@ async def get_second_level_services_gateway(
 
 @router.post("/service/details/")
 async def get_service_details_gateway(
-    request_data: ServiceIdRequestBody
+    request_data: ServiceIdRequestBody,
+    user: dict = Depends(verify_token), 
 ):
     try:
 
         # Extract service ID from the request body
         service_id = request_data.body.service_id
 
-        response = requests.get(f"{SERVICE_BASE_URL}/service/{service_id}/details/")
+        response = requests.get(f"{SERVICE_BASE_URL}/api/service/{service_id}/details/")
         if response.status_code == 200:
             response_data = response.json()
             return build_response(
@@ -152,10 +154,11 @@ async def get_special_services_gateway(
     request_header: RequestHeader,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
+    user: dict = Depends(verify_token), 
 ):
     try:
         response = requests.get(
-            f"{SERVICE_BASE_URL}/special-services/",
+            f"{SERVICE_BASE_URL}/api/special-services/",
             params={"page": page, "size": size},
         )
         if response.status_code == 200:
@@ -191,10 +194,11 @@ async def get_search_services_gateway(
     request_header: RequestHeader,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
+    user: dict = Depends(verify_token), 
 ):
     try:
         response = requests.get(
-            f"{SERVICE_BASE_URL}/search-services/",
+            f"{SERVICE_BASE_URL}/api/search-services/",
             params={"page": page, "size": size},
         )
         if response.status_code == 200:
@@ -230,6 +234,7 @@ async def get_descendant_hierarchy_gateway(
     request_data: ServiceIdRequestBody,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
+    user: dict = Depends(verify_token), 
 ):
     """
     Gateway API to forward the `get_descendant_hierarchy` request to the corresponding microservice.
@@ -317,7 +322,7 @@ async def get_booking_inputs_by_service_gateway(
     except Exception as e:
         return build_response(message=f"Unexpected error: {str(e)}", code="500", request_id=request_data.header.requestId)
     
-@router.post("/service_relatives/")
+@router.post("/preferred_services/")
 async def get_service_relatives_gateway(
     request_data: ServiceIdRequestBody,  # Use structured request body
     page: int = Query(1, ge=1, description="Page number"),
@@ -361,8 +366,8 @@ async def get_service_relatives_gateway(
     except Exception as e:
         return build_response(message=f"Unexpected error: {str(e)}", code="500", request_id=request_data.header.requestId)
 
-@router.post("/second-level-services/")
-async def get_all_second_level_services_gateway(
+@router.post("/second-level-with-child/")
+async def second_level_services_with_child(
     request_data: ServiceRequestBody,  # Standard request body structure
     limit: int = Query(10, ge=1, le=100, description="Pagination limit"),
     offset: int = Query(0, ge=0, description="Pagination offset"),

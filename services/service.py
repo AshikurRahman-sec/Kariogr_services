@@ -314,10 +314,12 @@ async def get_all_second_level_services(db: Session, limit: int = 10, offset: in
         second_level_with_children.append({
             "id": service.id,
             "name": service.name,
+            "is_leaf": service.is_leaf,
             "children": [
                 {
                     "id": child.id,
                     "name": child.name,
+                    "is_leaf": child.is_leaf,
                     "image_url": child.logo[0].image_url if child.logo else None
                 }
                 for child in children
