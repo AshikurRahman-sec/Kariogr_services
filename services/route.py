@@ -188,7 +188,7 @@ def get_search_services(
             detail=f"An unexpected error occurred: {str(e)}"
         )
     
-@router.get("booking_inputs/{service_id}", response_model=List[_schemas.BookingInputOut])
+@router.get("/booking_inputs/{service_id}", response_model=List[_schemas.BookingInputOut])
 async def get_booking_inputs_by_service(service_id: str, db: Session = Depends(get_db)):
     try:
         booking_inputs = await services.get_booking_inputs_by_service(db, service_id)
