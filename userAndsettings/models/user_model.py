@@ -57,12 +57,13 @@ class WorkerProfile(database.Base):
     user = relationship("UserProfile", back_populates="worker_profile")
     skills = relationship("WorkerSkill", back_populates="worker", cascade="all, delete-orphan")
     certifications = relationship("WorkerCertification", back_populates="worker", cascade="all, delete-orphan")
+    working_zones = relationship("WorkerZone", back_populates="worker", cascade="all, delete-orphan") 
 
 # Skill Table
 class Skill(database.Base):
     __tablename__ = 'skills'
     __table_args__ = {"schema": "karigor"}
-    skill_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    skill_id = Column(String(36), primary_key=True, nullable=False)
     skill_name = Column(String(255), unique=True, nullable=False)
     category = Column(String(100), index=True)
     description = Column(Text)
@@ -132,6 +133,5 @@ class WorkerZone(database.Base):
 
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
-    deleted_at = Column(TIMESTAMP, nullable=True)  # Soft delete
 
     worker = relationship("WorkerProfile", back_populates="working_zones")

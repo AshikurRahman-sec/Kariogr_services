@@ -93,7 +93,7 @@ class BookingInput(database.Base):
     required = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, nullable=True, onupdate=datetime.utcnow)
+    updated_at = Column(TIMESTAMP, nullable=False, onupdate=datetime.utcnow)
 
     # Relationship with Service (Back-Populated)
     service = relationship("Service", back_populates="booking_inputs")

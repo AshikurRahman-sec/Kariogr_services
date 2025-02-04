@@ -13,7 +13,7 @@ USER_SETTINGS_BASE_URL = os.environ.get("AUTH_BASE_URL")
 router = APIRouter()
 
 @router.post(
-    "/addresses",
+    "/create/unregister_user_address",
     response_model=Union[_schemas.AddressResponse, _schemas.ErrorResponse],
 )
 async def create_address_gateway(request_data: _schemas.AddressRequestBody):
@@ -23,7 +23,7 @@ async def create_address_gateway(request_data: _schemas.AddressRequestBody):
     try:
         address_data = request_data.body.dict()
 
-        response = requests.post(f"{USER_SETTINGS_BASE_URL}/api/addresses", json=address_data)
+        response = requests.post(f"{USER_SETTINGS_BASE_URL}/api/create/unregister_user_address", json=address_data)
 
         if response.status_code == 200:
             response_data = response.json()

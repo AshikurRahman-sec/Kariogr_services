@@ -32,7 +32,7 @@ async def update_worker_profile(user_id: str, profile_data: _schemas.WorkerProfi
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while updating worker profile")
     
-@router.post("/addresses", response_model=_schemas.UnregisteredUserAddressOut,)
+@router.post("/create/unregister_user_address", response_model=_schemas.UnregisteredUserAddressOut,)
 async def create_address(address: _schemas.UnregisteredUserAddressCreate, db: Session = Depends(get_db)):
     try:
         return await _service.create_address(db, address)
