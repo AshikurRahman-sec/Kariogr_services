@@ -64,7 +64,7 @@ def get_second_level_hierarchy(
     second_level_query = (
         select(Service.id, Service.name, ServiceLogo.logo_data, Service.is_leaf)
         .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
-        .where(Service.parent_id == root_service_id)
+        .where(Service.parent_id == str(root_service_id))
         .order_by(Service.created_at)
         .offset(offset)
         .limit(limit)
@@ -72,7 +72,7 @@ def get_second_level_hierarchy(
     second_level_data = db.execute(second_level_query).fetchall()
 
     # Count total second-level services
-    total_count_query = select(func.count()).where(Service.parent_id == root_service_id)
+    total_count_query = select(func.count()).where(Service.parent_id == str(root_service_id))
     total_count = db.scalar(total_count_query)
 
     # Format response data
@@ -102,7 +102,7 @@ def get_descendant_hierarchy(
     first_level_query = (
         select(Service.id, Service.name, ServiceLogo.logo_data, Service.is_leaf, ServiceLogo.image_url)
         .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
-        .where(Service.parent_id == service_id)
+        .where(Service.parent_id == str(service_id))
         .order_by(Service.created_at)
         .offset(offset)
         .limit(limit)
@@ -110,7 +110,7 @@ def get_descendant_hierarchy(
     first_level_data = db.execute(first_level_query).fetchall()
 
     # Count total first-level descendants
-    total_count_query = select(func.count()).where(Service.parent_id == service_id)
+    total_count_query = select(func.count()).where(Service.parent_id == str(service_id))
     total_count = db.scalar(total_count_query)
 
     # Fetch second-level descendants for each first-level descendant
@@ -164,7 +164,7 @@ def get_service_details(db: Session, service_id: UUID):
         )
         .outerjoin(ServiceLogo, Service.id == ServiceLogo.service_id)
         .outerjoin(ServiceDescription, Service.id == ServiceDescription.service_id)
-        .where(Service.id == service_id)
+        .where(Service.id == str(service_id))
     )
     service_details = db.execute(service_query).fetchone()
 
