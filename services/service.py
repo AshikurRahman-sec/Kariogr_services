@@ -252,6 +252,10 @@ async def get_booking_inputs_by_service(db: Session, service_id: str):
         .filter(BookingInput.service_id == service_id)
         .all()
     )
+    # Ensure options are converted correctly using the model method
+    for input in booking_inputs:
+        input.options = input.get_options()  # Use model's method
+
     return booking_inputs
 
 async def get_service_relatives(db: Session, service_id: str, limit: int = 10, offset: int = 0):
