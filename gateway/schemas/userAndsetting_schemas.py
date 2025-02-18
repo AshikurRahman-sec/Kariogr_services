@@ -48,4 +48,4 @@ class WorkerZoneOut(BaseModel):
 class WorkerZoneResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
-    data: List[WorkerZoneOut]
+    body: List[WorkerZoneOut]
