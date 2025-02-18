@@ -66,7 +66,7 @@ async def create_address_gateway(request_data: _schemas.AddressRequestBody):
 )
 async def get_worker_zones_gateway(
     request_data: _schemas.WorkerZoneRequestBody,
-    #user: dict = Depends(verify_token),
+    user: dict = Depends(verify_token),
 ):
     """
     Gateway API that forwards the `get_worker_zones_by_skill` request to the Worker microservice.

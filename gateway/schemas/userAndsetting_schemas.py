@@ -25,7 +25,7 @@ class UnregisteredUserAddressOut(UnregisteredUserAddressCreate):
 class AddressResponse(BaseModel):
     header: "ResponseHeader"
     meta: dict = {}
-    data: List[UnregisteredUserAddressOut]
+    body: List[UnregisteredUserAddressOut]
 
 class ServiceId(BaseModel):
     service_id: str
