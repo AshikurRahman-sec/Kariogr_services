@@ -17,7 +17,7 @@ router = APIRouter()
 )
 async def get_booking_gateway(
     request_data: _schemas.BookingRequestBody,
-    user: dict = Depends(verify_token),
+    #user: dict = Depends(verify_token),
 ):
     """
     Gateway API that forwards the `get_booking` request to the Booking microservice.
