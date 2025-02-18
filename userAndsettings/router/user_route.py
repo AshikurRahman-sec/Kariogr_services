@@ -40,10 +40,10 @@ async def create_address(address: _schemas.UnregisteredUserAddressCreate, db: Se
         logging.error(f"Error creating address: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while creating the address")
     
-@router.get("/worker_zones/{skill_id}", response_model=list[_schemas.WorkerZoneOut],)
-async def get_worker_zones_by_skill(skill_id: str, db: Session = Depends(get_db)):
+@router.get("/worker_zones/{service_id}", response_model=list[_schemas.WorkerZoneOut],)
+async def get_worker_zones_by_skill(service_id: str, db: Session = Depends(get_db)):
     try:
-        return await _service.get_worker_zones_by_skill(db, skill_id)
+        return await _service.get_worker_zones_by_skill(db, service_id)
     except Exception as e:
-        logging.error(f"Error retrieving worker zones for skill {skill_id}: {e}")
+        logging.error(f"Error retrieving worker zones for skill {service_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching worker zones")

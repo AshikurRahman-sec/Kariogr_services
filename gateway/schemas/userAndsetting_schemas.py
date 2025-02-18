@@ -27,13 +27,13 @@ class AddressResponse(BaseModel):
     meta: dict = {}
     data: List[UnregisteredUserAddressOut]
 
-class SkillId(BaseModel):
-    skill_id: str
+class ServiceId(BaseModel):
+    service_id: str
 
 class WorkerZoneRequestBody(BaseModel):
     meta: dict = {}
     header: RequestHeader
-    body: SkillId
+    body: ServiceId
 
 class WorkerZoneOut(BaseModel):
     worker_zone_id: str

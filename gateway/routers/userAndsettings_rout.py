@@ -72,10 +72,10 @@ async def get_worker_zones_gateway(
     Gateway API that forwards the `get_worker_zones_by_skill` request to the Worker microservice.
     """
     try:
-        skill_id = request_data.body.skill_id  
+        service_id = request_data.body.service_id 
 
         response = requests.get(
-            f"{USER_SETTINGS_BASE_URL}/api/worker_zones/{skill_id}"
+            f"{USER_SETTINGS_BASE_URL}/api/worker_zones/{service_id}"
         )
 
         if response.status_code == 200:
