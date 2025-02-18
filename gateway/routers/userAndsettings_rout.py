@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.encoders import jsonable_encoder
 from typing import Union
 import requests
 import logging
@@ -21,7 +22,7 @@ async def create_address_gateway(request_data: _schemas.AddressRequestBody):
     Gateway API to forward the `create_address` request to the Address microservice.
     """
     try:
-        address_data = request_data.body.dict()
+        address_data = jsonable_encoder(request_data.body)
 
         response = requests.post(f"{USER_SETTINGS_BASE_URL}/api/create/unregister_user_address", json=address_data)
 
