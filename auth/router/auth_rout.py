@@ -72,14 +72,12 @@ async def send_otp_mail(userdata: GenerateOtp, db: Session = Depends(get_db)):
         raise exec
     except Exception:
         raise HTTPException(status_code="500", detail="An error occurred while generating OTP")
-    
-@router.post("/users/verify_otp", tags=["Auth"])
-async def verify_otp(userdata: VerifyOtp, db: Session = Depends(get_db)):
+     
+@router.post("/forgot-password", tags=["Auth"])
+async def forgot_password(email: str, db: Session = Depends(get_db)):
     try:
-        verified_otp = await _service.verify_otp(userdata, db)
-        if not verified_otp:
-            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-        return {"message": "OTP verified successfully"}
+        await _service.password_reset(email, db)
+        return {"message": "reset otp sent successfully"}
     except HTTPException as e:
         # Return the HTTP exception raised in the service
         raise e

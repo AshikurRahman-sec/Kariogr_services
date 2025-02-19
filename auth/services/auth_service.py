@@ -47,6 +47,44 @@ async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
 
     return "OTP sent to your email"
 
+async def password_reset(email: str, db: _orm.Session):
+    user = db.query(_model.UserAuth).filter(_model.UserAuth.email == email).first()
+    
+    if not user:
+        raise _fastapi.HTTPException(status_code=404, detail="User not found")
+    
+    # Generate reset token
+    reset_otp = str(random.randint(100000, 999999))
+    expiry_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+    
+    # Store token in DB
+    user.reset_otp = reset_otp
+    user.reset_otp_expiry = expiry_time
+    db.add(user)
+    db.commit()
+    
+    
+    message = {
+    'email': user.email,
+    'subject': 'Password Reset Request',
+    'other': 'null',
+    'body': f"""
+    Dear User,
+
+    You have requested to reset your password. Your One-Time Password (OTP) is:
+
+    {reset_otp}
+
+    This OTP is valid for 15 minutes. If you did not request this, please ignore this email.
+
+    Regards,  
+    Your Application Team
+    """
+    }
+    
+    await kafka_producer_service.send_message("password_reset", message)
+    
+
 
 async def verify_otp(user_info: VerifyOtp, db: _orm.Session):
 

@@ -45,6 +45,8 @@ class UserAuth(database.Base):
     is_verified = Column(Boolean , default=False)
     otp = Column(Integer)
     is_active = Column(Boolean, default=True)
+    reset_otp = Column(Integer, nullable=True)  # OTP for password reset
+    reset_otp_expiry = Column(TIMESTAMP, nullable=True)  # Expiry time of OTP
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     

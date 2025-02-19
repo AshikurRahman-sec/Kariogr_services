@@ -27,7 +27,17 @@ class BookingBase(BaseModel):
     dates: List[str]
     times: List[str]
 
-class BookingResponse(BaseModel):
+class BookingResponse(BookingBase):
+    id: str
+    created_at: str
+    updated_at: Optional[str]
+
+class BookingCreateRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: BookingBase
+
+class BookingCreateResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
-    data: BookingBase
+    body: BookingResponse
