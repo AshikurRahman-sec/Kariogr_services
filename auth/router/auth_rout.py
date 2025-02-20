@@ -52,6 +52,7 @@ async def signup(user: _schemas.UserAuthCreate, db: Session = Depends(get_db)):
     
 @router.post("/login", response_model=_schemas.TokenOut, tags=["Auth"])
 async def login(user: _schemas.UserAuthLogin, db: Session = Depends(get_db)):
+    db_user = await _service.login_user(db, user)
     try:
         db_user = await _service.login_user(db, user)
         if not db_user:
@@ -76,13 +77,17 @@ async def send_otp_mail(userdata: GenerateOtp, db: Session = Depends(get_db)):
 @router.post("/forgot-password", tags=["Auth"])
 async def forgot_password(email: str, db: Session = Depends(get_db)):
     try:
-        await _service.password_reset(email, db)
+        await _service.request_password_reset(email, db)
         return {"message": "reset otp sent successfully"}
     except HTTPException as e:
         # Return the HTTP exception raised in the service
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while verifying OTP")
+    
+@router.post("/reset-password/",response_model=_schemas.TokenOut, tags=["Auth"])
+async def reset_password(otp: str, new_password: str, db: Session = Depends(get_db)):
+    return await reset_password(token, new_password, db)
     
 @router.post("/token/refresh",response_model=_schemas.TokenOut, tags=["Auth"])
 async def refresh_token(request: _schemas.RefreshTokenRequest, db: Session = Depends(get_db)):

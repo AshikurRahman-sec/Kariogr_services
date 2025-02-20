@@ -47,7 +47,7 @@ async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
 
     return "OTP sent to your email"
 
-async def password_reset(email: str, db: _orm.Session):
+async def request_password_reset(email: str, db: _orm.Session):
     user = db.query(_model.UserAuth).filter(_model.UserAuth.email == email).first()
     
     if not user:
@@ -83,6 +83,29 @@ async def password_reset(email: str, db: _orm.Session):
     }
     
     await kafka_producer_service.send_message("password_reset", message)
+
+async def reset_password(token: str, new_password: str, db: Session):
+    user = db.query(models.UserAuth).filter(models.UserAuth.reset_token == token).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    
+    # Check if the token is expired
+    if datetime.datetime.utcnow() > user.reset_token_expiry:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Hash and update the new password
+    hashed_password = bcrypt.hash(new_password)
+    user.password = hashed_password
+    
+    # Invalidate the used reset token
+    user.reset_token = None
+    user.reset_token_expiry = None
+    
+    db.add(user)
+    db.commit()
+
+    return {"message": "Password reset successful"}
     
 
 
