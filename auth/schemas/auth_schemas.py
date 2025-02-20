@@ -2,18 +2,19 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
+
+class RequestEmail(BaseModel):
+    email: EmailStr
+
 # UserAuth Schemas
-class UserAuthCreate(BaseModel):
-    email: EmailStr
+class UserAuthCreate(RequestEmail):
     password: str
 
-class UserAuthLogin(BaseModel):
-    email: EmailStr
+class UserAuthLogin(RequestEmail):
     password: str
 
-class UserAuthOut(BaseModel):
+class UserAuthOut(RequestEmail):
     user_id: str
-    email: EmailStr
     created_at: datetime
     updated_at: datetime
 
@@ -49,4 +50,8 @@ class TokenResponse(BaseModel):
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
-class 
+class ResetPassword(BaseModel):
+    otp: int
+    new_password: str
+
+

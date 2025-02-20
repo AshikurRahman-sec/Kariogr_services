@@ -44,6 +44,7 @@ class UserAuth(database.Base):
     role_id = Column(String(36), ForeignKey('karigor.roles.role_id'))
     is_verified = Column(Boolean , default=False)
     otp = Column(Integer)
+    otp_expiry = Column(TIMESTAMP, nullable=True)  # Expiry time of OTP
     is_active = Column(Boolean, default=True)
     reset_otp = Column(Integer, nullable=True)  # OTP for password reset
     reset_otp_expiry = Column(TIMESTAMP, nullable=True)  # Expiry time of OTP

@@ -73,9 +73,22 @@ async def send_otp_mail(userdata: GenerateOtp, db: Session = Depends(get_db)):
         raise exec
     except Exception:
         raise HTTPException(status_code="500", detail="An error occurred while generating OTP")
+    
+@router.post("/users/verify_otp", tags=["Auth"])
+async def verify_otp(userdata: VerifyOtp, db: Session = Depends(get_db)):
+    try:
+        verified_otp = await _service.verify_otp(userdata, db)
+        if not verified_otp:
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        return {"message": "OTP verified successfully"}
+    except HTTPException as e:
+        # Return the HTTP exception raised in the service
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An error occurred while verifying OTP")
      
 @router.post("/forgot-password", tags=["Auth"])
-async def forgot_password(email: str, db: Session = Depends(get_db)):
+async def forgot_password(email: _schemas.RequestEmail, db: Session = Depends(get_db)):
     try:
         await _service.request_password_reset(email, db)
         return {"message": "reset otp sent successfully"}
@@ -86,8 +99,15 @@ async def forgot_password(email: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="An error occurred while verifying OTP")
     
 @router.post("/reset-password/",response_model=_schemas.TokenOut, tags=["Auth"])
-async def reset_password(otp: str, new_password: str, db: Session = Depends(get_db)):
-    return await reset_password(token, new_password, db)
+async def reset_password(request_data: _schemas.ResetPassword, db: Session = Depends(get_db)):
+    try:
+        await _service.reset_password(request_data.otp, request_data.new_password, db)
+        return {"message": "password reset successfully"}
+    except HTTPException as e:
+        # Return the HTTP exception raised in the service
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An error occurred while verifying OTP")
     
 @router.post("/token/refresh",response_model=_schemas.TokenOut, tags=["Auth"])
 async def refresh_token(request: _schemas.RefreshTokenRequest, db: Session = Depends(get_db)):

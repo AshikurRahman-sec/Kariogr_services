@@ -26,22 +26,26 @@ async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
 
     if user.is_verified:
         raise _fastapi.HTTPException(status_code=400, detail="User is already verified")
+
     # Generate and send OTP
-    otp = str(random.randint(100000, 999999))
+    otp = random.randint(100000, 999999)
+    expiry_time = datetime.utcnow() + timedelta(minutes=5)  # OTP expires in 5 minutes
     
-    message = {'email': user.email,
-               'subject': 'Account Verification OTP Notification',
-               'other': 'null',
-               'body': f'Your OTP for account verification is: {otp} \n Please enter this OTP on the verification page to complete your account setup. \n If you did not request this OTP, please ignore this message.\n Thank you '
-                }
+    message = {
+        'email': user.email,
+        'subject': 'Account Verification OTP Notification',
+        'other': 'null',
+        'body': f'Your OTP for account verification is: {otp} \n This OTP will expire in 5 minutes.\n Please enter this OTP on the verification page to complete your account setup.\n If you did not request this OTP, please ignore this message.\n Thank you.'
+    }
 
     try:
-        await kafka_producer_service.send_message("email_notification", message)
+        await kafka_producer_service.send_message("email_verification", message)
     except Exception as err:
         print(f"Failed to publish message: {err}")
 
-    # Store the OTP in the database
+    # Store the OTP and expiry time in the database
     user.otp = otp
+    user.otp_expiry = expiry_time
     db.add(user)
     db.commit()
 
@@ -55,7 +59,7 @@ async def request_password_reset(email: str, db: _orm.Session):
     
     # Generate reset token
     reset_otp = str(random.randint(100000, 999999))
-    expiry_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+    expiry_time = datetime.utcnow() + timedelta(minutes=15)
     
     # Store token in DB
     user.reset_otp = reset_otp
@@ -84,43 +88,48 @@ async def request_password_reset(email: str, db: _orm.Session):
     
     await kafka_producer_service.send_message("password_reset", message)
 
-async def reset_password(token: str, new_password: str, db: Session):
-    user = db.query(models.UserAuth).filter(models.UserAuth.reset_token == token).first()
+async def reset_password(otp: str, new_password: str, db: _orm.Session):
+    user = db.query(_model.UserAuth).filter(_model.UserAuth.reset_otp == otp, _model.UserAuth.reset_otp_expiry > datetime.utcnow()).first()
     
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
+        raise _fastapi.HTTPException(status_code=400, detail="Invalid or expired token")
     
     # Check if the token is expired
     if datetime.datetime.utcnow() > user.reset_token_expiry:
-        raise HTTPException(status_code=400, detail="Reset token has expired")
+        raise _fastapi.HTTPException(status_code=400, detail="Reset token has expired")
     
     # Hash and update the new password
-    hashed_password = bcrypt.hash(new_password)
-    user.password = hashed_password
+    user.password = get_password_hash(new_password)
     
     # Invalidate the used reset token
     user.reset_token = None
     user.reset_token_expiry = None
     
     db.add(user)
-    db.commit()
-
-    return {"message": "Password reset successful"}
-    
+    db.commit()  
 
 
 async def verify_otp(user_info: VerifyOtp, db: _orm.Session):
+    user = db.query(_model.UserAuth).filter(
+        _model.UserAuth.email == user_info.email,
+        _model.UserAuth.otp == user_info.otp
+    ).first()
 
-    user = db.query(_model.UserAuth).filter(_model.UserAuth.email == user_info.email, _model.UserAuth.otp == user_info.otp).first()
-    
     if not user:
-        return None
-    
+        raise _fastapi.HTTPException(status_code=400, detail="Invalid OTP or email")
+
+    # Check if OTP is expired
+    if user.otp_expiry and user.otp_expiry < datetime.utcnow():
+        raise _fastapi.HTTPException(status_code=400, detail="OTP has expired")
+
     # Update user's is_verified field
     user.is_verified = True
     user.otp = None  # Clear the OTP
+    user.otp_expiry = None  # Clear OTP expiry time
     db.commit()
+    
     return user
+
 
 async def signup_user(db: _orm.Session, user: _schemas.UserAuthCreate):
     hashed_password = get_password_hash(user.password)

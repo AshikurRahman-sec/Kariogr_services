@@ -56,10 +56,3 @@ kafka_consumer_service = KafkaConsumerService(
     topics=["email_verification", "password_reset"]
 )
 
-
-# Kafka Consumer Instance
-kafka_consumer_service = KafkaConsumerService(
-    brokers="localhost:9092",
-    group_id="email_notification_group",
-    topic="email_notification"
-)
