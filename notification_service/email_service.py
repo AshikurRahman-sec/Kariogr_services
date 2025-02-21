@@ -30,27 +30,24 @@ async def send_password_reset_email(message):
 
 
 async def send_email(receiver_address, subject, body):
-    print("mamun")
-    sender_address = os.environ.get("MAIL_FROM")
-    #sender_password = os.environ.get("GMAIL_PASSWORD")
+    sender_address = os.environ.get("MAIL_ADDRESS")
+    sender_password = os.environ.get("MAIL_PASSWORD")
 
     smtp_server = os.environ.get("MAIL_SERVER")
     smtp_port = os.environ.get("MAIL_PORT")
 
-    print(smtp_port,type(smtp_port))
-
-    #server = smtplib.SMTP_SSL(smtp_server, smtp_port)
-    #server.starttls()
-    #server.login(sender_address, sender_password)
-    #server.login(sender_address)
+    server = smtplib.SMTP(smtp_server, smtp_port)
+    server.starttls()
+    server.login(sender_address, sender_password)
+    server.login(sender_address)
 
     msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = sender_address
     msg['To'] = receiver_address
 
-    #server.sendmail(sender_address, receiver_address, msg.as_string())
-    #server.quit()
+    server.sendmail(sender_address, receiver_address, msg.as_string())
+    server.quit()
 
 # async def notification(message):
 #     try:
