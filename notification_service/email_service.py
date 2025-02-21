@@ -39,7 +39,6 @@ async def send_email(receiver_address, subject, body):
     server = smtplib.SMTP(smtp_server, smtp_port)
     server.starttls()
     server.login(sender_address, sender_password)
-    server.login(sender_address)
 
     msg = MIMEText(body)
     msg['Subject'] = subject
