@@ -46,3 +46,42 @@ async def get_worker_zones_by_skill(db: _orm.Session, service_id: str):
         .all()
     )
     return worker_zones
+
+async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, district: str):
+    """
+    Retrieve workers who have a specific skill and are operating in a specific district.
+    """
+
+    workers = (
+        db.query(_model.WorkerProfile)
+        .filter(
+            _model.WorkerProfile.user.has(_model.UserProfile.profile_id.isnot(None)),  # Filter users correctly
+            _model.WorkerProfile.skills.any(_model.WorkerSkill.skill_id == skill_id),  # Filter by skill
+            _model.WorkerProfile.working_zones.any(func.lower(_model.WorkerZone.district) == district.lower())  # Filter by district
+        )
+        .options(
+            _orm.joinedload(_model.WorkerProfile.user),  # Load user data without join
+            _orm.joinedload(_model.WorkerProfile.skills),  # Load skills efficiently
+            _orm.joinedload(_model.WorkerProfile.working_zones)  # Load working zones efficiently
+        )
+        .distinct()
+        .all()
+    )
+
+    return [
+    {
+        "user": worker.user,
+        "worker_profile": worker,
+        "skills": [
+            _schemas.SkillOut(
+                skill_id=worker_skill.skill.skill_id,
+                skill_name=worker_skill.skill.skill_name,
+                category=worker_skill.skill.category,
+                description=worker_skill.skill.description,
+            )
+            for worker_skill in worker.skills
+        ],
+        "worker_zone": worker.working_zones,  # List of zones
+    }
+    for worker in workers
+]

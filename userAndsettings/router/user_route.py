@@ -47,3 +47,18 @@ async def get_worker_zones_by_skill(service_id: str, db: Session = Depends(get_d
     except Exception as e:
         logging.error(f"Error retrieving worker zones for skill {service_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching worker zones")
+
+#response_model=list[_schemas.WorkerWithSkillOut]  
+@router.post("/workers/filter", response_model=list[_schemas.WorkerWithSkillOut])
+async def get_workers_by_skill_and_district(request: _schemas.WorkerFilterRequest, db: Session = Depends(get_db)):
+    """
+    Get workers based on skill and district.
+    """
+    try:
+        workers = await _service.get_workers_by_skill_and_district(db, request.skill_id, request.district)
+        if not workers:
+            raise HTTPException(status_code=404, detail="No workers found for the given criteria")
+        return workers
+    except Exception as e:
+        logging.error(f"Error retrieving workers: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching workers")

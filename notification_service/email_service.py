@@ -36,8 +36,7 @@ async def send_email(receiver_address, subject, body):
     smtp_server = os.environ.get("MAIL_SERVER")
     smtp_port = os.environ.get("MAIL_PORT")
 
-    server = smtplib.SMTP(smtp_server, smtp_port)
-    server.starttls()
+    server = smtplib.SMTP_SSL(smtp_server, smtp_port)
     server.login(sender_address, sender_password)
 
     msg = MIMEText(body)

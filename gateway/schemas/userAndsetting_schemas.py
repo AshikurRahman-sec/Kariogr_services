@@ -23,7 +23,7 @@ class UnregisteredUserAddressOut(UnregisteredUserAddressCreate):
     address_id: str
 
 class AddressResponse(BaseModel):
-    header: "ResponseHeader"
+    header: ResponseHeader
     meta: dict = {}
     body: List[UnregisteredUserAddressOut]
 
@@ -49,3 +49,60 @@ class WorkerZoneResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: List[WorkerZoneOut]
+
+# Worker Filter Request (For Gateway)
+class WorkerFilterRequest(BaseModel):
+    skill_id: str
+    district: str
+
+class WorkerFilterGatewayRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: WorkerFilterRequest
+
+# Worker Profile Schemas
+class UserProfileOut(BaseModel):
+    profile_id: str
+    user_id: str
+    first_name: str
+    last_name: str
+    phone_number: Optional[str]
+    date_of_birth: Optional[str]
+    profile_picture_url: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+class WorkerProfileOut(BaseModel):
+    worker_id: str
+    hourly_rate: Optional[float]
+    availability_status: Optional[str]
+    bio: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+class SkillOut(BaseModel):
+    skill_id: str
+    skill_name: str
+    category: Optional[str]
+    description: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+# Worker Response (Matches Worker Service)
+class WorkerWithSkillOut(BaseModel):
+    user: UserProfileOut
+    worker_profile: WorkerProfileOut
+    skills: List[SkillOut]
+    worker_zone: List[WorkerZoneOut]  # Supports multiple zones
+
+    class Config:
+        orm_mode = True
+
+# Gateway Response Schema
+class WorkerFilterGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: List[WorkerWithSkillOut]

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
@@ -31,7 +31,7 @@ class WorkerProfileUpdate(BaseModel):
 
 class WorkerProfileOut(BaseModel):
     worker_id: str
-    user_id: str
+    #user_id: str
     hourly_rate: Optional[float]
     availability_status: Optional[str]
     bio: Optional[str]
@@ -60,6 +60,31 @@ class WorkerZoneOut(BaseModel):
     road_number: Optional[str] = None
     latitude: Optional[Decimal] = None
     longitude: Optional[Decimal] = None
+
+    class Config:
+        orm_mode = True
+
+# Skill Info
+class SkillOut(BaseModel):
+    skill_id: str
+    skill_name: str
+    category: Optional[str]
+    description: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+# Request Schema for Filtering Workers
+class WorkerFilterRequest(BaseModel):
+    skill_id: str
+    district: str
+
+# Full Worker Details
+class WorkerWithSkillOut(BaseModel):
+    user: UserProfileOut
+    worker_profile: WorkerProfileOut
+    skills: List[SkillOut]
+    worker_zone: List[WorkerZoneOut]
 
     class Config:
         orm_mode = True
