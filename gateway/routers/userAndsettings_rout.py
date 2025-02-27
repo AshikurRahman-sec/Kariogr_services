@@ -116,7 +116,7 @@ async def get_worker_zones_gateway(
     )
 async def get_workers_by_skill_and_district_gateway(
     request_data: _schemas.WorkerFilterGatewayRequest,
-    #user: dict = Depends(verify_token),  # Auth validation
+    user: dict = Depends(verify_token),  # Auth validation
 ):
     """
     Gateway API that forwards the `get_workers_by_skill_and_district` request to the Worker microservice.

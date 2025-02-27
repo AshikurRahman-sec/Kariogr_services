@@ -79,12 +79,17 @@ class WorkerFilterRequest(BaseModel):
     skill_id: str
     district: str
 
-# Full Worker Details
-class WorkerWithSkillOut(BaseModel):
+class SkillWithZoneOut(BaseModel):
+    skill: SkillOut
+    worker_zone: WorkerZoneOut
+
+    class Config:
+        orm_mode = True
+
+class WorkerWithSkillsAndZonesOut(BaseModel):
     user: UserProfileOut
     worker_profile: WorkerProfileOut
-    skills: List[SkillOut]
-    worker_zone: List[WorkerZoneOut]
+    skill_with_zone: List[SkillWithZoneOut]  # Each skill is now paired with its specific zone
 
     class Config:
         orm_mode = True
