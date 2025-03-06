@@ -89,7 +89,16 @@ class SkillWithZoneOut(BaseModel):
 class WorkerWithSkillsAndZonesOut(BaseModel):
     user: UserProfileOut
     worker_profile: WorkerProfileOut
-    skill_with_zone: SkillWithZoneOut  # Each skill is now paired with its specific zone
+    skill_with_zone: SkillWithZoneOut  
+
+    class Config:
+        orm_mode = True
+
+class SearchWorkerDetails(BaseModel):
+    data:List[WorkerWithSkillsAndZonesOut]
+    page: int
+    size: int
+    total_services: int
 
     class Config:
         orm_mode = True

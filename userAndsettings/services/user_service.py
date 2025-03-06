@@ -47,27 +47,29 @@ async def get_worker_zones_by_skill(db: _orm.Session, service_id: str):
     )
     return worker_zones
 
-async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, district: str):
+async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, district: list[str], size: int, page: int):
     """
-    Retrieve workers who have a specific skill and operate in a specific district.
+    Retrieve workers who have a specific skill and operate in specific districts with pagination.
     """
-    worker_skill_zones = (
+    query = (
         db.query(_model.WorkerSkillZone)
         .join(_model.WorkerZone, _model.WorkerSkillZone.worker_zone_id == _model.WorkerZone.worker_zone_id)
         .filter(
-            _model.WorkerSkillZone.skill_id == skill_id,  # Filter by skill
-            _model.WorkerZone.district.ilike(f"%{district}%")  # Filter by district
+            _model.WorkerSkillZone.skill_id == skill_id,
+            _model.WorkerZone.district.ilike(district)
         )
         .options(
-            _orm.joinedload(_model.WorkerSkillZone.worker).joinedload(_model.WorkerProfile.user),  # Load user details
-            _orm.joinedload(_model.WorkerSkillZone.skill),  # Load skill details
-            _orm.joinedload(_model.WorkerSkillZone.worker_zone),  # Load worker zone details
+            _orm.joinedload(_model.WorkerSkillZone.worker).joinedload(_model.WorkerProfile.user), 
+            _orm.joinedload(_model.WorkerSkillZone.skill),  
+            _orm.joinedload(_model.WorkerSkillZone.worker_zone),  
         )
-        .distinct()
-        .all()
     )
 
-    return [
+    total_services = query.count()  # Get total count before applying limit & offset
+
+    worker_skill_zones = query.offset(page).limit(size).all()  # Apply pagination
+
+    data = [
         {
             "user": ws.worker.user,
             "worker_profile": ws.worker,
@@ -92,5 +94,12 @@ async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, dis
         }
         for ws in worker_skill_zones
     ]
+
+    return {
+        "data": data,
+        "page": (page // size) + 1,
+        "size": size,
+        "total_services": total_services
+    }
 
 

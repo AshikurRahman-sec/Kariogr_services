@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.encoders import jsonable_encoder
 from typing import Union
 import requests
@@ -111,30 +111,43 @@ async def get_worker_zones_gateway(
             request_id=request_data.header.requestId,
         )
 
-@router.post("/workers/filter",
-             response_model=_schemas.WorkerFilterGatewayResponse
-    )
+@router.post(
+    "/workers/filter",
+    #response_model=_schemas.WorkerFilterGatewayResponse,
+)
 async def get_workers_by_skill_and_district_gateway(
     request_data: _schemas.WorkerFilterGatewayRequest,
+    limit: int = Query(10, ge=1),  # Default limit: 10, min: 1
+    offset: int = Query(0, ge=0),  # Default offset: 0, min: 0
     user: dict = Depends(verify_token),  # Auth validation
 ):
     """
     Gateway API that forwards the `get_workers_by_skill_and_district` request to the Worker microservice.
+    Supports pagination using limit and offset.
     """
     try:
         # Forward request to the worker microservice
         response = requests.post(
             f"{USER_SETTINGS_BASE_URL}/api/workers/filter",
-            json={"skill_id": request_data.body.skill_id, "district": request_data.body.district},
+            json={
+                "skill_id": request_data.body.skill_id,
+                "district": request_data.body.district,
+            },
+            params={"limit": limit, "offset": offset},  # Pass limit & offset as query parameters
         )
 
         if response.status_code == 200:
             response_data = response.json()
             return build_response(
-                data=response_data,
+                data=response_data["data"],
                 request_id=request_data.header.requestId,
                 message="Workers retrieved successfully",
                 code="200",
+                meta={  # Include pagination metadata
+                    "page": response_data["page"],
+                    "size": response_data["size"],
+                    "total_services": response_data["total_services"]
+                },
             )
         else:
             return build_response(

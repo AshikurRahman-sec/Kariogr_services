@@ -91,12 +91,17 @@ class SkillOut(BaseModel):
     class Config:
         orm_mode = True
 
-# Worker Response (Matches Worker Service)
-class WorkerWithSkillOut(BaseModel):
+class SkillWithZoneOut(BaseModel):
+    skill: SkillOut
+    worker_zone: WorkerZoneOut
+
+    class Config:
+        orm_mode = True
+
+class WorkerWithSkillsAndZonesOut(BaseModel):
     user: UserProfileOut
     worker_profile: WorkerProfileOut
-    skills: List[SkillOut]
-    worker_zone: List[WorkerZoneOut]  # Supports multiple zones
+    skill_with_zone: SkillWithZoneOut
 
     class Config:
         orm_mode = True
@@ -105,4 +110,4 @@ class WorkerWithSkillOut(BaseModel):
 class WorkerFilterGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
-    body: List[WorkerWithSkillOut]
+    body: List[WorkerWithSkillsAndZonesOut]

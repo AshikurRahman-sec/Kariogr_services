@@ -48,17 +48,30 @@ async def get_worker_zones_by_skill(service_id: str, db: Session = Depends(get_d
         logging.error(f"Error retrieving worker zones for skill {service_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching worker zones")
 
-@router.post("/workers/filter", response_model=list[_schemas.WorkerWithSkillsAndZonesOut])
-async def get_workers_by_skill_and_district(request: _schemas.WorkerFilterRequest, db: Session = Depends(get_db)):
+@router.post("/workers/filter", response_model=_schemas.SearchWorkerDetails)
+async def get_workers_by_skill_and_district(
+    request: _schemas.WorkerFilterRequest,
+    size: int = Query(10, ge=1),  # Default 10, minimum 1
+    page: int = Query(0, ge=0),  # Default 0, minimum 0
+    db: Session = Depends(get_db),
+):
     """
-    Get workers based on skill and district.
+    Get workers based on skill and district with pagination using query parameters.
     """
-    workers = await _service.get_workers_by_skill_and_district(db, request.skill_id, request.district)
     try:
-        workers = await _service.get_workers_by_skill_and_district(db, request.skill_id, request.district)
-        if not workers:
+        response = await _service.get_workers_by_skill_and_district(
+            db,
+            request.skill_id, 
+            request.district,
+            size,
+            page
+        )
+        
+        if not response["data"]:
             raise HTTPException(status_code=404, detail="No workers found for the given criteria")
-        return workers
+    
+        return response
+
     except Exception as e:
         logging.error(f"Error retrieving workers: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching workers")

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-def build_response(data=None, request_id=None, message="OK", code="200"):
+def build_response(data=None, request_id=None, message="OK", code="200", meta=None):
     request_received_time = datetime.utcnow()
     response_time = datetime.utcnow()
     processing_time_ms = int((response_time - request_received_time).total_seconds() * 1000)
@@ -18,7 +18,7 @@ def build_response(data=None, request_id=None, message="OK", code="200"):
             "responseProcessingTimeInMs": processing_time_ms,
             "responseCode": code,
         },
-        "meta": {},
+        "meta": meta if meta else {},
         "body":  data if data else {}
         
     }
