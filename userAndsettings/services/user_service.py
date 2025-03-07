@@ -102,4 +102,63 @@ async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, dis
         "total_services": total_services
     }
 
+async def get_workers_by_zone(db: _orm.Session, worker_id: str, district: str, size: int, page: int):
+    """
+    Fetch paginated workers for a given worker ID and working zone (district).
+    """
+    query = db.query(_model.WorkerProfile).join(_model.WorkerZone).filter(
+        _model.WorkerProfile.worker_id == worker_id,
+        _model.WorkerZone.district.ilike(district)
+    )
+
+    # Get total count before applying pagination
+    total_workers = query.count()
+
+    # Apply pagination
+    workers = query.offset(page * size).limit(size).all()
+
+    worker_list = []
+    
+    for worker in workers:
+        worker_data = _schemas.WorkerDetailsOut(
+            user=_schemas.UserProfileOut(
+                profile_id=worker.user.profile_id,
+                user_id=worker.user.user_id,
+                first_name=worker.user.first_name,
+                last_name=worker.user.last_name,
+                phone_number=worker.user.phone_number,
+                date_of_birth=worker.user.date_of_birth,
+                profile_picture_url=worker.user.profile_picture_url,
+            ),
+            worker_profile=_schemas.WorkerProfileOut(
+                worker_id=worker.worker_id,
+                hourly_rate=worker.hourly_rate,
+                availability_status=worker.availability_status,
+                bio=worker.bio,
+            ),
+            skills=[
+                _schemas.SkillOut(
+                    skill_id=ws.skill.skill_id,
+                    skill_name=ws.skill.skill_name,
+                    category=ws.skill.category,
+                    description=ws.skill.description
+                ) for ws in worker.skills
+            ],
+            working_zone=_schemas.WorkerZoneOut(
+                worker_zone_id=worker.working_zones[0].worker_zone_id,
+                worker_id=worker.working_zones[0].worker_id,
+                division=worker.working_zones[0].division,
+                district=worker.working_zones[0].district,
+                thana=worker.working_zones[0].thana,
+                road_number=worker.working_zones[0].road_number,
+                latitude=worker.working_zones[0].latitude,
+                longitude=worker.working_zones[0].longitude
+            ) if worker.working_zones else None
+        )
+        worker_list.append(worker_data)
+
+    return worker_list, total_workers
+
+
+
 

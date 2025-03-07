@@ -102,3 +102,29 @@ class SearchWorkerDetails(BaseModel):
 
     class Config:
         orm_mode = True
+
+class WorkerDetailsOut(BaseModel):
+    user: UserProfileOut
+    worker_profile: WorkerProfileOut
+    skills: List[SkillOut]
+    working_zone: WorkerZoneOut
+
+    class Config:
+        orm_mode = True
+
+# Request Schema
+class WorkerByZoneRequest(BaseModel):
+    worker_id: str
+    district: str
+    
+# Response Schema
+class PaginatedWorkerListResponse(BaseModel):
+    data: List[WorkerDetailsOut]
+    total_workers: int
+    page: int
+    size: int
+
+    class Config:
+        orm_mode = True
+
+

@@ -62,7 +62,7 @@ async def create_address_gateway(request_data: _schemas.AddressRequestBody):
 
 @router.post(
     "/worker-zones",
-    response_model=_schemas.WorkerZoneResponse
+    response_model=Union[_schemas.WorkerZoneResponse,  _schemas.ErrorResponse]
 )
 async def get_worker_zones_gateway(
     request_data: _schemas.WorkerZoneRequestBody,
@@ -113,7 +113,7 @@ async def get_worker_zones_gateway(
 
 @router.post(
     "/workers/filter",
-    #response_model=_schemas.WorkerFilterGatewayResponse,
+    response_model=Union[_schemas.WorkerFilterGatewayResponse, _schemas.ErrorResponse]
 )
 async def get_workers_by_skill_and_district_gateway(
     request_data: _schemas.WorkerFilterGatewayRequest,
@@ -147,6 +147,72 @@ async def get_workers_by_skill_and_district_gateway(
                     "page": response_data["page"],
                     "size": response_data["size"],
                     "total_services": response_data["total_services"]
+                },
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to fetch workers"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Worker microservice is unavailable")
+        return build_response(
+            data={},
+            message="Worker microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+
+
+@router.post(
+    "/workers/by-zone",
+    response_model=Union[_schemas.WorkerByZoneGatewayResponse, _schemas.ErrorResponse]
+)
+async def get_workers_by_zone_gateway(
+    request_data: _schemas.WorkerByZoneGatewayRequest,
+    page: int = Query(0, ge=0),   # Default page: 0, minimum: 0
+    size: int = Query(10, ge=1),  # Default size: 10, minimum: 1
+    user: dict = Depends(verify_token),  # Auth validation
+):
+    """
+    Gateway API that forwards the `get_workers_by_zone` request to the Worker microservice.
+    Supports pagination using `page` and `size` query parameters.
+    """
+    try:
+        # Forward request to the Worker microservice
+        response = requests.post(
+            f"{USER_SETTINGS_BASE_URL}/api/workers/by-zone",
+            json={
+                "worker_id": request_data.body.worker_id,
+                "district": request_data.body.district
+            },
+            params={"page": page, "size": size},  # Pass pagination params
+        )
+
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data["data"],
+                request_id=request_data.header.requestId,
+                message="Workers retrieved successfully",
+                code="200",
+                meta={
+                    "page": response_data["page"],
+                    "size": response_data["size"],
+                    "total_workers": response_data["total_workers"]
                 },
             )
         else:

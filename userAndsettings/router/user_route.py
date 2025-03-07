@@ -71,7 +71,39 @@ async def get_workers_by_skill_and_district(
             raise HTTPException(status_code=404, detail="No workers found for the given criteria")
     
         return response
+    except HTTPException as e:
+        # Return the HTTP exception raised in the service
+        raise e
+    except Exception as e:
+        logging.error(f"Error retrieving workers: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching workers")
 
+@router.post("/workers/by-zone", response_model=_schemas.PaginatedWorkerListResponse )
+async def get_workers_by_zone(
+    request: _schemas.WorkerByZoneRequest,
+    size: int = Query(10, ge=1),  # Default 10, minimum 1
+    page: int = Query(0, ge=0),  # Default 0, minimum 0
+    db: Session = Depends(get_db),
+):
+    """
+    Fetch paginated workers by specific user_id and working zone.
+    """
+    workers, total_workers = await _service.get_workers_by_zone(db, request.worker_id, request.district, size, page)
+    try:
+        workers, total_workers = await _service.get_workers_by_zone(db, request.worker_id, request.district, size, page)
+        
+        if not workers:
+            raise HTTPException(status_code=404, detail="No workers found in this zone")
+
+        return {
+            "data": workers,
+            "total_workers": total_workers,
+            "page": page,
+            "size": size
+        }
+    except HTTPException as e:
+        # Return the HTTP exception raised in the service
+        raise e
     except Exception as e:
         logging.error(f"Error retrieving workers: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching workers")

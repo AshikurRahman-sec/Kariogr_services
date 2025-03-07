@@ -111,3 +111,26 @@ class WorkerFilterGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: List[WorkerWithSkillsAndZonesOut]
+
+class WorkerByZoneRequestBody(BaseModel):
+    worker_id: str
+    district: str
+
+class WorkerByZoneGatewayRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: WorkerByZoneRequestBody
+
+class WorkerDetailsOut(BaseModel):
+    user: UserProfileOut
+    worker_profile: WorkerProfileOut
+    skills: List[SkillOut]
+    working_zone: WorkerZoneOut
+
+    class Config:
+        orm_mode = True
+
+class WorkerByZoneGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: List[WorkerDetailsOut]
