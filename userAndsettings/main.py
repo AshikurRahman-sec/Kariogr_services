@@ -4,9 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import database as _database
 from router.user_route import router as user_router
-
-
-# from kafka_producer import kafka_producer_service
+from kafka_producer_consumer import kafka_user_settings_service
 
 
 app = FastAPI()
@@ -32,11 +30,11 @@ app.add_middleware(
 @app.on_event("startup")
 async def on_startup():
     _database.create_database()
-#     await kafka_producer_service.start()
+    await kafka_user_settings_service.start()
 
-# @app.on_event("shutdown")
-# async def shutdown_event():
-#     await kafka_producer_service.stop()
+@app.on_event("shutdown")
+async def shutdown_event():
+    await kafka_user_settings_service.stop()
 
 # Endpoint to check if the API is live
 @app.get("/check_api")

@@ -79,6 +79,9 @@ async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, dis
                     skill_name=ws.skill.skill_name,
                     category=ws.skill.category,
                     description=ws.skill.description,
+                    service_charge=ws.service_charge,
+                    charge_unit= ws.charge_unit,
+                    discount= ws.discount
                 ),
                 "worker_zone": _schemas.WorkerZoneOut(
                     worker_zone_id=ws.worker_zone.worker_zone_id,
@@ -141,8 +144,11 @@ async def get_workers_by_zone(db: _orm.Session, worker_id: str, district: str, s
                     skill_id=ws.skill.skill_id,
                     skill_name=ws.skill.skill_name,
                     category=ws.skill.category,
-                    description=ws.skill.description
-                ) for ws in worker.skills
+                    description=ws.skill.description,
+                    service_charge=ws.service_charge,
+                    charge_unit= ws.charge_unit,
+                    discount= ws.discount
+                ) for ws in worker.skill_zones
             ],
             working_zone=_schemas.WorkerZoneOut(
                 worker_zone_id=worker.working_zones[0].worker_zone_id,

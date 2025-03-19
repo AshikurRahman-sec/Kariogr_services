@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
+
 # UserProfile Schemas
 class UserProfileUpdate(BaseModel):
     first_name: Optional[str]
@@ -70,6 +71,9 @@ class SkillOut(BaseModel):
     skill_name: str
     category: Optional[str]
     description: Optional[str]
+    service_charge: float
+    charge_unit: str
+    discount: float
 
     class Config:
         orm_mode = True

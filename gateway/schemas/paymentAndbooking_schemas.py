@@ -9,6 +9,13 @@ class BookingType(str, Enum):
     MONTHLY = "monthly"
     ONETIME = "onetime"
 
+class BookingStatus(str, Enum):
+    Pending = 'pending'
+    WORKER_SELECTED = 'worker_selected'
+    CONFIRMED = 'confirmed'
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+
 class BookingId(BaseModel):
     booking_id: str
 
@@ -24,11 +31,14 @@ class BookingBase(BaseModel):
     worker_count: Optional[int] = None
     booking_type: BookingType
     service_id: str
+    user_id: str
     dates: List[str]
     times: List[str]
 
 class BookingResponse(BookingBase):
-    id: str
+    booking_id: str
+    user_id: str
+    status: BookingStatus
     created_at: str
     updated_at: Optional[str]
 

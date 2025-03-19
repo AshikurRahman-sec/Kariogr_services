@@ -15,18 +15,24 @@ logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 
-
-@router.post("/create-booking", response_model=_schemas.BookingResponse, tags=["Bookings"], status_code=status.HTTP_201_CREATED)
+#response_model=_schemas.BookingResponse
+@router.post("/create-booking", tags=["Bookings"])
 async def create_booking_handler(booking_data: _schemas.BookingCreate, db: Session = Depends(get_db)):
-
-    #return await _service.create_booking(db, booking_data)
     try:
         return await _service.create_booking(db, booking_data)
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/select-workers", tags=["Bookings"])
+async def select_workers_for_booking(worker_selection: _schemas.WorkerSelection, db: Session = Depends(get_db)):
+    """
+    Allows users to select multiple workers for a booking.
+    """
+    try:
+        return await _service.add_workers_to_booking(db, worker_selection)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.get("/{booking_id}", response_model=_schemas.BookingResponse, tags=["Bookings"])
 async def get_booking_handler(booking_id: str, db: Session = Depends(get_db)):

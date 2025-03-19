@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from enum import Enum
 from datetime import datetime
 from typing import Any
@@ -10,6 +10,13 @@ class BookingType(str, Enum):
     MONTHLY = "monthly"
     ONETIME = "onetime"
 
+class BookingStatus(str, Enum):
+    Pending = 'pending'
+    WORKER_SELECTED = 'worker_selected'
+    CONFIRMED = 'confirmed'
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+
 
 class BookingBase(BaseModel):
     service_area: str = Field(..., example="Mirpur")
@@ -18,6 +25,7 @@ class BookingBase(BaseModel):
     worker_count: Optional[int] = Field(None, example=3)
     booking_type: BookingType
     service_id: str = Field(..., example="service-12345")
+    user_id: str = Field(..., example="user-12345")
     dates: List[str] = Field(..., example=["18 week of 2024"])
     times: List[str] = Field(..., example=["11pm-1am"])
 
@@ -25,7 +33,9 @@ class BookingCreate(BookingBase):
     pass
 
 class BookingResponse(BookingBase):
-    id: str
+    booking_id: str
+    user_id: str
+    status: BookingStatus
     created_at: str
     updated_at: Optional[str]
 
@@ -53,3 +63,15 @@ class BookingResponse(BookingBase):
 
         # Validate and return the response model
         return cls(**obj_dict)
+
+class WorkerInfo(BaseModel):
+    worker_id: str
+    skill_id: str
+    charge_amount: float
+    discount:float
+    charge_unit: str
+
+class WorkerSelection(BaseModel):
+    booking_id: str
+    workers: List[WorkerInfo]  # List of worker IDs
+    addons: Optional[List[WorkerInfo]] = None  # Worker ID -> List of add-on service IDs
