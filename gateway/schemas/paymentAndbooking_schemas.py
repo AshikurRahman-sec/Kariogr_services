@@ -51,3 +51,26 @@ class BookingCreateResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: BookingResponse
+
+
+class WorkerInfo(BaseModel):
+    worker_id: str
+    skill_id: str
+    charge_amount: float
+    discount: float
+    charge_unit: str
+
+class WorkerSelection(BaseModel):
+    booking_id: str
+    workers: List[WorkerInfo]
+    addons: Optional[List[WorkerInfo]] = None
+
+class WorkerSelectionRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: WorkerSelection
+
+class WorkerSelectionResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: dict  # Can be adjusted based on actual response structure
