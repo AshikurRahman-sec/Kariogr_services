@@ -149,7 +149,7 @@ class WorkerSkillZone(database.Base):
     worker_zone_id = Column(String(36), ForeignKey('karigor.worker_zones.worker_zone_id', ondelete="CASCADE"), index=True)
     
     service_charge = Column(Numeric(10, 2), nullable=False)  # Store charge amount
-    charge_unit = Column(Enum("weekly", "monthly", "per job", name="charge_unit_enum"), nullable=False)  # Define charge unit
+    charge_unit = Column(Enum('hourly', 'daily', 'per job', name="charge_unit_enum"), nullable=False)  # Define charge unit
     discount = Column(Numeric(10, 2), nullable=True, default=0)  # Store discount amount
 
     created_at = Column(TIMESTAMP, server_default=func.now())

@@ -16,6 +16,11 @@ class BookingStatus(str, Enum):
     COMPLETED = 'completed'
     CANCELLED = 'cancelled'
 
+class ChargeUnit(str, Enum):
+    HOURLY = 'hourly'
+    DAILY = 'daily'
+    PERJOB = 'per job'
+
 class BookingId(BaseModel):
     booking_id: str
 
@@ -58,12 +63,12 @@ class WorkerInfo(BaseModel):
     skill_id: str
     charge_amount: float
     discount: float
-    charge_unit: str
+    charge_unit: ChargeUnit
 
 class WorkerSelection(BaseModel):
     booking_id: str
     workers: List[WorkerInfo]
-    addons: Optional[List[WorkerInfo]] = None
+    addons: Optional[List[WorkerInfo]] = []
 
 class WorkerSelectionRequest(BaseModel):
     meta: dict = {}

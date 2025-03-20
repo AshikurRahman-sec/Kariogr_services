@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import Union
 import requests
 import logging
 import os
@@ -64,7 +65,7 @@ async def get_booking_gateway(
 
 @router.post(
     "/create-booking",
-    response_model=_schemas.BookingCreateResponse,
+    response_model=Union[_schemas.BookingCreateResponse, _schemas.ErrorResponse]
 )
 async def create_booking_gateway(
     request_data: _schemas.BookingCreateRequest,
@@ -81,7 +82,7 @@ async def create_booking_gateway(
             json=booking_payload.dict(),
         )
 
-        if response.status_code == 201:
+        if response.status_code == 200:
             response_data = response.json()
             return build_response(
                 data=response_data,
@@ -117,7 +118,6 @@ async def create_booking_gateway(
 @router.post(
     "/select-workers",
     response_model=_schemas.WorkerSelectionResponse,
-    tags=["Bookings"]
 )
 async def select_workers_gateway(
     request_data: _schemas.WorkerSelectionRequest,

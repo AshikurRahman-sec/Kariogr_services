@@ -11,7 +11,7 @@ import database
 class BookingType(pyEnum):
     WEEKLY = "weekly"
     MONTHLY = "monthly"
-    PER_JOB = "per job"
+    ONETIME = "onetime"
 
 class Booking(database.Base):
     __tablename__ = "bookings"
@@ -74,7 +74,7 @@ class BookingWorkerSkill(database.Base):
     booking_worker_id = Column(String(36), ForeignKey('karigor.booking_workers.id'), nullable=False)
     skill_id = Column(String(36), nullable=False)
     charge_amount = Column(Numeric(10, 2), nullable=False)
-    charge_unit = Column(Enum('weekly', 'monthly', 'per job', name='charge_unit_enum'))
+    charge_unit = Column(Enum('hourly', 'daily', 'per job', name='charge_unit_enum'))
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
 
