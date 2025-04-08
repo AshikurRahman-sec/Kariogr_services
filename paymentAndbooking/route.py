@@ -43,6 +43,12 @@ async def get_booking_handler(booking_id: str, db: Session = Depends(get_db)):
             detail=str(e)
         )
     
-@router.get("/bookings/{booking_id}/summary")
+@router.get("/bookings/{booking_id}/summary", tags=["Bookings"])
 async def booking_summary(booking_id: str, db: Session = Depends(get_db)):
-    return await _service.get_booking_summary(db, booking_id)
+    try:
+        return await _service.get_booking_summary(db, booking_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )

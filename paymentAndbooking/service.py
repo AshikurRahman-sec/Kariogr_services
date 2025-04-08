@@ -74,7 +74,7 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
 
         # Adding add-ons if provided
         if worker in worker_selection.addons:
-            #for addon_id in worker_selection.addons[worker_id]:
+            #for addon_id in worker_selection.addonsworker_id]:
                 # addon_service = db.query(AddonService).filter(AddonService.id == addon_id).first()
                 # if not addon_service:
                 #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Addon service {addon_id} not found")
