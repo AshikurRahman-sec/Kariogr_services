@@ -4,6 +4,7 @@ from uuid import UUID
 
 from schemas import user_schemas as _schemas
 from models import user_model as _model
+from fastapi.encoders import jsonable_encoder
 
 
 def update_user_profile(db: _orm.Session, user_id: str, profile_data: _schemas.UserProfileUpdate):
@@ -166,5 +167,30 @@ async def get_workers_by_zone(db: _orm.Session, worker_id: str, district: str, s
     return worker_list, total_workers
 
 
+async def get_user_profile_by_user_id(user_id: str, db: _orm.Session):
+    user_profile = (
+        db.query(_model.UserProfile)
+        .options(
+            _orm.joinedload(_model.UserProfile.address),
+            _orm.joinedload(_model.UserProfile.worker_profile)
+        )
+        .filter(_model.UserProfile.user_id == user_id)
+        .first()
+    )
 
+    return jsonable_encoder(user_profile)
+
+async def get_worker_details_by_worker_id(worker_id: str, db: _orm.Session):
+    worker = (
+    db.query(_model.WorkerProfile, _model.UserProfile)
+    .join(_model.UserProfile, _model.UserProfile.profile_id == _model.WorkerProfile.user_id)
+    .filter(_model.WorkerProfile.worker_id == worker_id)
+    .first()
+)
+    worker_profile, user_profile = worker
+
+    return {
+        "worker_profile": jsonable_encoder(worker_profile),
+        "user_profile": jsonable_encoder(user_profile)
+    }
 

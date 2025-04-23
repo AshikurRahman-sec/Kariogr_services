@@ -42,6 +42,16 @@ class PaymentBookingService:
 
         await self.producer.send_and_wait(request_topic, message)  # Dynamic request topic
         return await future  # Wait for the response
+    
+    async def get_service_details(self, request_topic, service_id: str):
+        request_id = str(uuid.uuid4())
+        message = json.dumps({"request_id": request_id, "service_id": service_id, "request_type": 'service_details'}).encode("utf-8")
+        
+        future = asyncio.get_event_loop().create_future()
+        self.pending_requests[request_id] = future
+
+        await self.producer.send_and_wait(request_topic, message)  # Dynamic request topic
+        return await future  # Wait for the response
 
     async def stop(self):
         await self.producer.stop()

@@ -79,3 +79,11 @@ class WorkerSelectionResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: dict  # Can be adjusted based on actual response structure
+
+class BookingId(BaseModel):
+    booking_id: str
+
+class BookingRequestBody(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: BookingId

@@ -99,6 +99,8 @@ async def get_booking_summary(db: Session, booking_id: str):
     if not booking:
         return {"error": "Booking not found"}
 
+    user_details = await kafka_payment_booking_service.get_user_details('user_request', booking.user_id)
+
     workers = db.query(BookingWorker).filter(BookingWorker.booking_id == booking_id).all()
     workers_list = []
 
@@ -106,26 +108,50 @@ async def get_booking_summary(db: Session, booking_id: str):
         skills = db.query(BookingWorkerSkill).filter(BookingWorkerSkill.booking_worker_id == worker.id).all()
         addons = db.query(WorkerAddonService).filter(WorkerAddonService.booking_worker_id == worker.id).all()
 
-        workers_list.append({
-            "worker_id": worker.worker_id,
-            "skills": [{
+        worker_details = await kafka_payment_booking_service.get_worker_details('user_request', worker.worker_id)
+
+        skill_details_list = []
+        for skill in skills:
+            service_details = await kafka_payment_booking_service.get_service_details('service_request', skill.skill_id)
+            #print("here",service_details)
+            skill_details_list.append(service_details['service_data'])
+        
+        skills_list = [
+            {
                 "skill_id": skill.skill_id,
+                "skill_name": detail["service_name"],
                 "charge_amount": skill.charge_amount,
-                "charge_unit": skill.charge_unit if skill.charge_unit else None
-            } for skill in skills],
-            "addons": [{
+                "charge_unit": skill.charge_unit or None
+            }
+            for skill, detail in zip(skills, skill_details_list)
+        ]
+
+        # 🔧 Assemble addon info
+        addons_list = [
+            {
                 "addon_service_id": addon.addon_service_id,
                 "addon_worker_id": addon.booking_worker_id,
                 "quantity": addon.quantity,
                 "charge_amount": addon.charge_amount
-            } for addon in addons]
+            }
+            for addon in addons
+        ]
+
+        # 👷 Append worker info
+        workers_list.append({
+            "worker_id": worker.worker_id,
+            "worker_name": f"{worker_details['worker_data']['user_profile']['first_name']} {worker_details['worker_data']['user_profile']['last_name']}",
+            "skills": skills_list,
+            "addons": addons_list
         })
 
     return {
         "booking_id": booking.booking_id,
         "user_id": booking.user_id,
+        "user_name": f"{user_details['user_data']['first_name']} {user_details['user_data']['last_name']}",
         "service_id": booking.service_id,
-        "booking_time": booking.get_times(),  # Returns list of booking times
+        "booking_time": booking.get_times(),  # assuming this returns a list
         "workers": workers_list,
         "total_charge": booking.total_charge
     }
+
