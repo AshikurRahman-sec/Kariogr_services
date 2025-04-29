@@ -77,10 +77,10 @@ async def send_otp_mail(userdata: GenerateOtp, db: Session = Depends(get_db)):
 @router.post("/users/verify_otp", tags=["Auth"])
 async def verify_otp(userdata: VerifyOtp, db: Session = Depends(get_db)):
     try:
-        verified_otp = await _service.verify_otp(userdata, db)
-        if not verified_otp:
+        verified_user = await _service.verify_otp(userdata, db)
+        if not verified_user:
             raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-        return {"message": "OTP verified successfully"}
+        return await _service.create_tokens(db, verified_user.user_id)
     except HTTPException as e:
         # Return the HTTP exception raised in the service
         raise e

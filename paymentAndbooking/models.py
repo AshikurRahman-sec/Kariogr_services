@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Enum, DateTime, Text, Numeric, ForeignKey
+from sqlalchemy import Column, String, Integer, Enum, DateTime, Text, Numeric, ForeignKey, func
 from sqlalchemy.orm import relationship
 import uuid
 from enum import Enum as pyEnum
@@ -107,3 +107,20 @@ class Payment(database.Base):
     updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
 
     booking = relationship("Booking", back_populates="payments")
+
+
+class AddToBag(database.Base):
+    __tablename__ = 'add_to_bag'
+    __table_args__ = {"schema": "karigor"}
+
+    bag_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    service_id = Column(String(36), nullable=False)
+
+    user_id = Column(String(36), nullable=True)
+    unregistered_address_id = Column(String(36), nullable=True)
+
+    quantity = Column(Integer, default=1)
+    added_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)

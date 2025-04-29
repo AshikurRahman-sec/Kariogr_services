@@ -38,7 +38,8 @@ class UserAuth(database.Base):
     __tablename__ = 'users'
     __table_args__ = {"schema": "karigor"}
     user_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=True, index=True)
+    phone = Column(String(20), unique=True, index=True, nullable=True)
     password = Column(String(255))
     firebase_uid = Column(String(255), unique=True, index=True)
     role_id = Column(String(36), ForeignKey('karigor.roles.role_id'))

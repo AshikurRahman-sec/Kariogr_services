@@ -52,3 +52,28 @@ async def booking_summary(booking_id: str, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    
+@router.post("/bag/add", response_model=_schemas.BagItemResponse, tags=["addtobag"])
+async def add_to_bag(request: _schemas.AddToBagRequest, db: Session = Depends(get_db)):
+    try:
+        return await _service.add_to_bag(db, request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/bag/remove", response_model=dict, tags=["addtobag"])
+async def remove_from_bag(request: _schemas.RemoveFromBagRequest, db: Session = Depends(get_db)):
+    item = await _service.remove_from_bag(db, request.bag_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"message": "Item removed from bag"}
+
+@router.get("/bag/bag-list", response_model=list[_schemas.BagItemResponse], tags=["addtobag"])
+async def view_bag(user_id: str = None, unregistered_address_id: str = None, db: Session = Depends(get_db)):
+    try:
+        items = await _service.get_bag_items_by_user(db, user_id, unregistered_address_id)
+        return items
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )

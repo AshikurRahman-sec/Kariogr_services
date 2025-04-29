@@ -37,10 +37,19 @@ class GenerateUserToken(pydantic.BaseModel):
        from_attributes=True
 
 class GenerateOtp(pydantic.BaseModel):
-    email: str
+    email: pydantic.Optional[str] = None
+    phone: pydantic.Optional[str] = None
+
+    @pydantic.root_validator
+    def at_least_one_required(cls, values):
+        email, phone = values.get('email'), values.get('phone')
+        if not email and not phone:
+            raise ValueError("Either email or phone must be provided")
+        return values
     
 class VerifyOtp(pydantic.BaseModel):
-    email: str
+    email: pydantic.Optional[str] = None
+    phone: pydantic.Optional[str] = None
     otp: int
 
 class Payload(pydantic.BaseModel):

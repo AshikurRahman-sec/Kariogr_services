@@ -80,3 +80,24 @@ class WorkerSelection(BaseModel):
     booking_id: str
     workers: List[WorkerInfo]  # List of worker IDs
     addons: Optional[List[WorkerInfo]] = []  # Worker ID -> List of add-on service IDs
+
+class AddToBagRequest(BaseModel):
+    service_id: str
+    quantity: int = Field(default=1, ge=1)
+    user_id: Optional[str] = None
+    unregistered_address_id: Optional[str] = None
+
+class RemoveFromBagRequest(BaseModel):
+    bag_id: str
+
+class BagItemResponse(BaseModel):
+    bag_id: str
+    service_id: str
+    service_name: str
+    user_id: Optional[str]
+    unregistered_address_id: Optional[str]
+    quantity: int
+    added_at: datetime
+
+    class Config:
+        orm_mode = True

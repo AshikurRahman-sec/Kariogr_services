@@ -19,17 +19,35 @@ logging.basicConfig(level=logging.INFO)
 
 async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
 
-    user = db.query(_model.UserAuth).filter(_model.UserAuth.email == user.email).first()
-    
-    if not user:
-        raise _fastapi.HTTPException(status_code=404, detail="User not found")
+    # Try to get user by email or phone
+    query = db.query(_model.UserAuth)
+    if user.email:
+        existing_user = query.filter(_model.UserAuth.email == user.email).first()
+    else:
+        existing_user = query.filter(_model.UserAuth.phone == user.phone).first()
 
-    if user.is_verified:
-        raise _fastapi.HTTPException(status_code=400, detail="User is already verified")
+    # If user doesn't exist, create it
+    if not existing_user:
+        new_user = _model.UserAuth(
+            email=user.email,
+            phone=user.phone,
+            is_verified=False
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        user_to_update = new_user
+    else:
+        user_to_update = existing_user
 
     # Generate and send OTP
     otp = random.randint(100000, 999999)
     expiry_time = datetime.utcnow() + timedelta(minutes=5)  # OTP expires in 5 minutes
+
+    user_to_update.otp = otp
+    user_to_update.otp_expiry = expiry_time
+    db.add(user_to_update)
+    db.commit()
     
     message = {
         'email': user.email,
@@ -42,12 +60,6 @@ async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
         await kafka_producer_service.send_message("email_verification", message)
     except Exception as err:
         print(f"Failed to publish message: {err}")
-
-    # Store the OTP and expiry time in the database
-    user.otp = otp
-    user.otp_expiry = expiry_time
-    db.add(user)
-    db.commit()
 
     return "OTP sent to your email"
 

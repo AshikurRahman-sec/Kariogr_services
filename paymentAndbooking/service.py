@@ -4,8 +4,8 @@ from fastapi import HTTPException, status
 import uuid
 import json
 
-from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService
-from schemas import BookingCreate, BookingResponse, WorkerSelection
+from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag
+from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest
 from kafka_producer_consumer import kafka_payment_booking_service
 
 
@@ -83,7 +83,6 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
                     booking_worker_id=booking_worker.id,
                     addon_service_id=worker.skill_id,
                     quantity=1,  # Default quantity
-                    #charge_amount=addon_service.charge_amount
                     charge_amount=worker.charge_amount,
                     charge_unit = worker.charge_unit
                 )
@@ -110,32 +109,34 @@ async def get_booking_summary(db: Session, booking_id: str):
 
         worker_details = await kafka_payment_booking_service.get_worker_details('user_request', worker.worker_id)
 
-        skill_details_list = []
+        skills_list = []
         for skill in skills:
             service_details = await kafka_payment_booking_service.get_service_details('service_request', skill.skill_id)
             #print("here",service_details)
-            skill_details_list.append(service_details['service_data'])
-        
-        skills_list = [
-            {
+            skills_list.append(
+                {
                 "skill_id": skill.skill_id,
-                "skill_name": detail["service_name"],
+                "skill_name": service_details['service_data']["service_name"],
                 "charge_amount": skill.charge_amount,
                 "charge_unit": skill.charge_unit or None
-            }
-            for skill, detail in zip(skills, skill_details_list)
-        ]
+                })
+        
 
         # 🔧 Assemble addon info
-        addons_list = [
-            {
-                "addon_service_id": addon.addon_service_id,
-                "addon_worker_id": addon.booking_worker_id,
-                "quantity": addon.quantity,
-                "charge_amount": addon.charge_amount
-            }
-            for addon in addons
-        ]
+        addons_list = []
+        for addon in addons:
+            service_details = await kafka_payment_booking_service.get_service_details('service_request', addon.addon_service_id)
+            worker_details = await kafka_payment_booking_service.get_worker_details('user_request', addon.booking_worker_id)
+            addons_list.append(
+                {
+                    "addon_service_id": addon.addon_service_id,
+                    "skill_name": service_details['service_data']["service_name"],
+                    "addon_worker_id": addon.booking_worker_id,
+                    "addon_worker_name": f"{worker_details['worker_data']['user_profile']['first_name']} {worker_details['worker_data']['user_profile']['last_name']}",
+                    "quantity": addon.quantity,
+                    "charge_amount": addon.charge_amount
+                })
+
 
         # 👷 Append worker info
         workers_list.append({
@@ -155,3 +156,46 @@ async def get_booking_summary(db: Session, booking_id: str):
         "total_charge": booking.total_charge
     }
 
+async def add_to_bag(db: Session, data: AddToBagRequest) -> AddToBag:
+    bag_item = AddToBag(
+        service_id=data.service_id,
+        user_id=data.user_id,
+        unregistered_address_id=data.unregistered_address_id,
+        quantity=data.quantity
+    )
+    db.add(bag_item)
+    db.commit()
+    db.refresh(bag_item)
+    return bag_item
+
+async def remove_from_bag(db: Session, bag_id: str):
+    item = db.query(AddToBag).filter(AddToBag.bag_id == bag_id).first()
+    if item:
+        db.delete(item)
+        db.commit()
+    return item
+
+async def get_bag_items_by_user(db: Session, user_id: str, unregistered_address_id: str):
+    data = []
+    query = db.query(AddToBag)
+    if user_id:
+        bag_items = query.filter(AddToBag.user_id == user_id).all()
+    elif unregistered_address_id:
+        bag_items = query.filter(AddToBag.unregistered_address_id == unregistered_address_id).all()
+    
+    for item in bag_items:
+        service_details = await kafka_payment_booking_service.get_service_details('service_request', item.service_id)
+        data.append(
+                    {
+            "quantity": item.quantity,
+            "bag_id": item.bag_id,
+            "unregistered_address_id": item.unregistered_address_id,
+            "service_id": item.service_id,
+            "service_name": service_details['service_data']["service_name"],
+            "user_id": item.user_id,
+            "added_at": item.added_at,
+            }
+                
+        )
+
+    return data
