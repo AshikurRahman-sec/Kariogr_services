@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
@@ -131,4 +131,31 @@ class PaginatedWorkerListResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class CreateWorkerSkillRatingRequest(BaseModel):
+    worker_id: str
+    skill_id: str
+    user_id: str
+    rating: Decimal = Field(..., ge=0, le=5, decimal_places=2)
+    review_text: Optional[str] = None
+
+class WorkerSkillRatingResponse(BaseModel):
+    rating_id: str
+    worker_id: str
+    skill_id: str
+    user_id: str
+    rating: Decimal
+    review_text: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class CreateWorkerSkillRatingResponse(BaseModel):
+    rating: WorkerSkillRatingResponse
+    average_rating: float
+    total_ratings: int
+
+    class Config:
+        from_attributes = True
 

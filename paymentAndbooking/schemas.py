@@ -93,7 +93,7 @@ class RemoveFromBagRequest(BaseModel):
 class BagItemResponse(BaseModel):
     bag_id: str
     service_id: str
-    service_name: str
+    service_name: Optional[str] = None
     user_id: Optional[str]
     unregistered_address_id: Optional[str]
     quantity: int

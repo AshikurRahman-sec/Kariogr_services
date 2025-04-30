@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from schemas.base_schemas import RequestHeader, ResponseHeader, ErrorResponse
 from decimal import Decimal
@@ -87,3 +87,46 @@ class BookingRequestBody(BaseModel):
     meta: dict = {}
     header: RequestHeader
     body: BookingId
+
+class AddToBagBody(BaseModel):
+    service_id: str
+    quantity: int = Field(default=1, ge=1)
+    user_id: Optional[str] = None
+    unregistered_address_id: Optional[str] = None
+
+class RemoveFromBagBody(BaseModel):
+    bag_id: str
+
+class AddToBagGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: AddToBagBody
+
+class RemoveFromBagGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: RemoveFromBagBody
+
+class BagItemGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: dict  # or you can define BagItemBodyResponse schema separately if you want stronger typing
+
+class GenericGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: dict
+
+class BagListBody(BaseModel):
+    user_id: Optional[str] = None
+    unregistered_address_id: Optional[str] = None
+
+class BagListGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: BagListBody
+
+class BagListGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: list[dict]

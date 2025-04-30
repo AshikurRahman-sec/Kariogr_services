@@ -107,3 +107,17 @@ async def get_workers_by_zone(
     except Exception as e:
         logging.error(f"Error retrieving workers: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching workers")
+
+@router.post(
+    "/worker-skill-rating",
+    response_model=_schemas.CreateWorkerSkillRatingResponse,
+    #tags=["ratings"]
+)
+async def create_worker_skill_rating(
+    request: _schemas.CreateWorkerSkillRatingRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        return await _service.create_or_update_worker_skill_rating(db, request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

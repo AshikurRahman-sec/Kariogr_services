@@ -194,3 +194,49 @@ async def get_worker_details_by_worker_id(worker_id: str, db: _orm.Session):
         "user_profile": jsonable_encoder(user_profile)
     }
 
+async def create_or_update_worker_skill_rating(db: _orm.Session, request: _schemas.CreateWorkerSkillRatingRequest):
+    # Check for existing rating
+    existing_rating = db.query(_model.WorkerSkillRating).filter_by(
+        worker_id=request.worker_id,
+        skill_id=request.skill_id,
+        user_id=request.user_id
+    ).first()
+
+    if existing_rating:
+        existing_rating.rating = request.rating
+        existing_rating.review_text = request.review_text
+        db.commit()
+        db.refresh(existing_rating)
+        rating_obj = existing_rating
+    else:
+        rating_obj = _model.WorkerSkillRating(
+            worker_id=request.worker_id,
+            skill_id=request.skill_id,
+            user_id=request.user_id,
+            rating=request.rating,
+            review_text=request.review_text
+        )
+        db.add(rating_obj)
+        db.commit()
+        db.refresh(rating_obj)
+
+    # Calculate updated average rating
+    result = db.query(
+        func.avg(_model.WorkerSkillRating.rating).label("average_rating"),
+        func.count(_model.WorkerSkillRating.rating).label("total_ratings")
+    ).filter(
+        _model.WorkerSkillRating.worker_id == request.worker_id,
+        _model.WorkerSkillRating.skill_id == request.skill_id
+    ).one()
+
+    average_rating = float(result.average_rating or 0.0)
+    total_ratings = result.total_ratings or 0
+
+    rating_response = _schemas.WorkerSkillRatingResponse.from_orm(rating_obj)
+
+    return _schemas.CreateWorkerSkillRatingResponse(
+        rating=rating_response,
+        average_rating=round(average_rating, 2),
+        total_ratings=total_ratings
+    )
+ 

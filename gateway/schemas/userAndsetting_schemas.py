@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict
 from decimal import Decimal
+from datetime import datetime
 
 from schemas.base_schemas import RequestHeader, ResponseHeader, ErrorResponse
 
@@ -134,3 +135,31 @@ class WorkerByZoneGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: List[WorkerDetailsOut]
+
+class CreateWorkerSkillRatingBody(BaseModel):
+    worker_id: str
+    skill_id: str
+    user_id: str
+    rating: Decimal = Field(..., ge=0, le=5, decimal_places=2)
+    review_text: Optional[str] = None
+
+class CreateWorkerSkillRatingRequest(BaseModel):
+    header: RequestHeader
+    meta: Dict = {}
+    body: CreateWorkerSkillRatingBody
+
+# Response body
+class WorkerSkillRatingResponse(BaseModel):
+    rating_id: str
+    worker_id: str
+    skill_id: str
+    user_id: str
+    rating: Decimal
+    review_text: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+class CreateWorkerSkillRatingResponse(BaseModel):
+    header: ResponseHeader
+    meta: Dict = {}
+    body: Dict[str, Optional[Dict]]
