@@ -1,5 +1,6 @@
 import datetime
 import pydantic
+from typing import Optional
 
 
 class UserBase(pydantic.BaseModel):
@@ -37,19 +38,18 @@ class GenerateUserToken(pydantic.BaseModel):
        from_attributes=True
 
 class GenerateOtp(pydantic.BaseModel):
-    email: pydantic.Optional[str] = None
-    phone: pydantic.Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
-    @pydantic.root_validator
-    def at_least_one_required(cls, values):
-        email, phone = values.get('email'), values.get('phone')
-        if not email and not phone:
+    @pydantic.model_validator(mode="after")
+    def at_least_one_required(self):
+        if not self.email and not self.phone:
             raise ValueError("Either email or phone must be provided")
-        return values
+        return self
     
 class VerifyOtp(pydantic.BaseModel):
-    email: pydantic.Optional[str] = None
-    phone: pydantic.Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
     otp: int
 
 class Payload(pydantic.BaseModel):

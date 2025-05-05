@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator
 from schemas.base_schemas import RequestHeader, ResponseHeader, ErrorResponse
 from datetime import datetime
 from typing import Optional
@@ -56,7 +56,14 @@ class UserAuthLoginResponse(BaseModel):
     body: UserAuthLoginResponseBody
 
 class GenerateOtp(BaseModel):
-    email: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+    @model_validator(mode="after")
+    def at_least_one_required(self):
+        if not self.email and not self.phone:
+            raise ValueError("Either email or phone must be provided")
+        return self
 
 class GenerateOtpRequestBody(BaseModel):
     meta: dict = {}
