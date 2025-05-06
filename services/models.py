@@ -154,3 +154,16 @@ class OfferService(database.Base):
 
     # Relationship with Service table
     service = relationship("Service", back_populates="offers")
+
+
+class ServiceToolRequirement(database.Base):
+    __tablename__ = 'service_tool_requirements'
+    __table_args__ = {"schema": "karigor"}
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    service_id = Column(String, ForeignKey('karigor.services.id', ondelete="CASCADE"), nullable=False, index=True)
+    needs_tools = Column(Boolean, nullable=False, default=False)  # True if tools are required
+    
+   
+   
+

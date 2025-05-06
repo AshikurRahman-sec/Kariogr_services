@@ -234,3 +234,16 @@ async def get_all_second_level_services(
         logging.error(f"Error fetching 2nd-level services: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching services")
 
+
+@router.get("/{service_id}", response_model=_schemas.ServiceToolRequirementResponse)
+async def get_tool_requirement(service_id: str, language_code: str, db: Session = Depends(get_db)):
+    try:
+        db_obj = await services.get_tool_requirement(db, service_id, language_code)
+        if not db_obj:
+            raise HTTPException(status_code=404, detail="Tool requirement not found")
+        return db_obj
+    except HTTPException as exc:
+        raise exc
+    except Exception as e:
+        logging.error(f"Error fetching tool information: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching tool information")

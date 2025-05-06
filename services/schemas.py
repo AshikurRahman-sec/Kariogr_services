@@ -53,3 +53,8 @@ class SecondLevelServiceOut(BaseModel):
 
 class ServiceHierarchyOut(BaseModel):
     services: List[SecondLevelServiceOut]
+
+class ServiceToolRequirementResponse(BaseModel):
+    service_id: str
+    needs_tools: bool
+    

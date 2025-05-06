@@ -331,3 +331,9 @@ async def get_all_second_level_services(db: Session, limit: int = 10, offset: in
         })
 
     return second_level_with_children
+
+
+async def get_tool_requirement(db: Session, service_id: str):
+    return db.query(ServiceToolRequirement).filter_by(
+        service_id=service_id
+    ).first()
