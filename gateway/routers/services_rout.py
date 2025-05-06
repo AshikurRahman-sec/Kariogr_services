@@ -17,7 +17,7 @@ async def get_root_services_gateway(
     request_data: ServiceRequestBody,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
-    user: dict = Depends(verify_token),  
+    #user: dict = Depends(verify_token),  
 ):
     """
     Gateway API that verifies token via Auth Service before forwarding request.
@@ -54,7 +54,7 @@ async def get_second_level_services_gateway(
     request_data: ServiceIdRequestBody,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
-    user: dict = Depends(verify_token), 
+    #user: dict = Depends(verify_token), 
 ):
     """
     Gateway API to forward the `get_second_level_services` request to the corresponding microservice.
@@ -107,7 +107,7 @@ async def get_second_level_services_gateway(
 @router.post("/service/details/")
 async def get_service_details_gateway(
     request_data: ServiceIdRequestBody,
-    user: dict = Depends(verify_token), 
+    #user: dict = Depends(verify_token), 
 ):
     try:
 
@@ -154,7 +154,7 @@ async def get_special_services_gateway(
     request_header: RequestHeader,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
-    user: dict = Depends(verify_token), 
+    #user: dict = Depends(verify_token), 
 ):
     try:
         response = requests.get(
@@ -194,7 +194,7 @@ async def get_search_services_gateway(
     request_header: RequestHeader,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
-    user: dict = Depends(verify_token), 
+    #user: dict = Depends(verify_token), 
 ):
     try:
         response = requests.get(
@@ -234,7 +234,7 @@ async def get_descendant_hierarchy_gateway(
     request_data: ServiceIdRequestBody,
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, description="Page size"),
-    user: dict = Depends(verify_token), 
+    #user: dict = Depends(verify_token), 
 ):
     """
     Gateway API to forward the `get_descendant_hierarchy` request to the corresponding microservice.
@@ -284,7 +284,7 @@ async def get_descendant_hierarchy_gateway(
 @router.post("/booking_inputs/")
 async def get_booking_inputs_by_service_gateway(
     request_data: ServiceIdRequestBody,  # Use the correct request body structure
-    user: dict = Depends(verify_token),
+    #user: dict = Depends(verify_token),
 ):
     """
     Gateway API that verifies token via Auth Service before forwarding request.
@@ -327,7 +327,7 @@ async def get_service_relatives_gateway(
     request_data: ServiceIdRequestBody,  # Use structured request body
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, le=100, description="Page size"),
-    user: dict = Depends(verify_token),
+    #user: dict = Depends(verify_token),
 ):
     """
     Gateway API that verifies token via Auth Service before forwarding request.
@@ -371,7 +371,7 @@ async def second_level_services_with_child(
     request_data: ServiceRequestBody,  # Standard request body structure
     limit: int = Query(10, ge=1, le=100, description="Pagination limit"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
-    user: dict = Depends(verify_token),
+    #user: dict = Depends(verify_token),
 ):
     """
     Gateway API that verifies token via Auth Service before forwarding request.

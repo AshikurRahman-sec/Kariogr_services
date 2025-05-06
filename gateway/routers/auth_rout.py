@@ -192,7 +192,7 @@ async def verify_otp_gateway(
         # Handle the microservice response
         if response.status_code == 200:
             return build_response(
-                data={},
+                data=response.json(),
                 request_id=request_data.header.requestId,
                 message="OTP verified successfully",
             )
