@@ -401,4 +401,56 @@ async def second_level_services_with_child(
         return build_response(message="Service is unavailable", code="503", request_id=request_data.header.requestId)
     except Exception as e:
         return build_response(message=f"Unexpected error: {str(e)}", code="500", request_id=request_data.header.requestId)
+    
+@router.post(
+"/service-tool-requirement",
+ response_model= ServiceToolRequirementGatewayResponse,
+)
+async def get_service_tool_requirement_gateway(
+    request_data: ServiceToolRequirementGatewayRequest,
+    #user: dict = Depends(verify_token),
+):
+    
+    try:
+        service_id = request_data.body.service_id
+
+        response = requests.get(
+            f"{SERVICE_BASE_URL}/api/{service_id}",
+            #params={"language_code": language_code}
+        )
+       
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Tool requirement fetched successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to fetch tool requirement"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        #logging.error("Tool requirement service is unavailable")
+        return build_response(
+            data={},
+            message="Tool requirement service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        #logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
 

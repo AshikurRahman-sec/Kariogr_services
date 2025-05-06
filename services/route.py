@@ -236,9 +236,9 @@ async def get_all_second_level_services(
 
 
 @router.get("/{service_id}", response_model=_schemas.ServiceToolRequirementResponse)
-async def get_tool_requirement(service_id: str, language_code: str, db: Session = Depends(get_db)):
+async def get_tool_requirement(service_id: str, db: Session = Depends(get_db)):
     try:
-        db_obj = await services.get_tool_requirement(db, service_id, language_code)
+        db_obj = await services.get_tool_requirement(db, service_id)
         if not db_obj:
             raise HTTPException(status_code=404, detail="Tool requirement not found")
         return db_obj
