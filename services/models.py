@@ -58,8 +58,8 @@ class ServiceLogo(database.Base):
     __table_args__ = {"schema": "karigor"}
 
     service_id = Column(String, ForeignKey("karigor.services.id", ondelete="CASCADE"), primary_key=True)
-    image_url = Column(Text, nullable=True)  # URL for externally stored images
-    logo_data = Column(Text, nullable=True)  # Base64 or binary for database-stored logos
+    image_url = Column(String, nullable=True)  # URL for externally stored images
+    image_name = Column(String, nullable=True) 
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
