@@ -48,27 +48,43 @@ async def get_worker_zones_by_skill(db: _orm.Session, service_id: str):
     )
     return worker_zones
 
-async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, district: list[str], size: int, page: int):
+async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, district: str, size: int, page: int):
     """
-    Retrieve workers who have a specific skill and operate in specific districts with pagination.
+    Retrieve workers who have a specific skill and operate in specific districts with pagination,
+    including average worker skill ratings.
     """
+    subquery = (
+        db.query(
+            _model.WorkerSkillRating.worker_id,
+            _model.WorkerSkillRating.skill_id,
+            func.avg(_model.WorkerSkillRating.rating).label("average_rating"),
+            func.count(_model.WorkerSkillRating.rating).label("rating_count")
+        )
+        .group_by(_model.WorkerSkillRating.worker_id, _model.WorkerSkillRating.skill_id)
+        .subquery()
+    )
+
     query = (
-        db.query(_model.WorkerSkillZone)
+        db.query(_model.WorkerSkillZone, subquery.c.average_rating, subquery.c.rating_count)
         .join(_model.WorkerZone, _model.WorkerSkillZone.worker_zone_id == _model.WorkerZone.worker_zone_id)
+        .outerjoin(
+            subquery,
+            (_model.WorkerSkillZone.worker_id == subquery.c.worker_id) &
+            (_model.WorkerSkillZone.skill_id == subquery.c.skill_id)
+        )
         .filter(
             _model.WorkerSkillZone.skill_id == skill_id,
             _model.WorkerZone.district.ilike(district)
         )
         .options(
-            _orm.joinedload(_model.WorkerSkillZone.worker).joinedload(_model.WorkerProfile.user), 
-            _orm.joinedload(_model.WorkerSkillZone.skill),  
-            _orm.joinedload(_model.WorkerSkillZone.worker_zone),  
+            _orm.joinedload(_model.WorkerSkillZone.worker).joinedload(_model.WorkerProfile.user),
+            _orm.joinedload(_model.WorkerSkillZone.skill),
+            _orm.joinedload(_model.WorkerSkillZone.worker_zone),
         )
     )
 
-    total_services = query.count()  # Get total count before applying limit & offset
-
-    worker_skill_zones = query.offset(page).limit(size).all()  # Apply pagination
+    total_services = query.count()
+    worker_skill_zones = query.offset(page).limit(size).all()
 
     data = [
         {
@@ -81,8 +97,8 @@ async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, dis
                     category=ws.skill.category,
                     description=ws.skill.description,
                     service_charge=ws.service_charge,
-                    charge_unit= ws.charge_unit,
-                    discount= ws.discount
+                    charge_unit=ws.charge_unit,
+                    discount=ws.discount
                 ),
                 "worker_zone": _schemas.WorkerZoneOut(
                     worker_zone_id=ws.worker_zone.worker_zone_id,
@@ -95,8 +111,12 @@ async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, dis
                     longitude=ws.worker_zone.longitude,
                 ),
             },
+            "rating": {
+                "average": float(avg_rating) if avg_rating is not None else None,
+                "count": int(rating_count) if rating_count is not None else 0
+            }
         }
-        for ws in worker_skill_zones
+        for ws, avg_rating, rating_count in worker_skill_zones
     ]
 
     return {

@@ -90,10 +90,15 @@ class SkillWithZoneOut(BaseModel):
     class Config:
         orm_mode = True
 
+class RatingOut(BaseModel):
+    average: float | None
+    count: int
+
 class WorkerWithSkillsAndZonesOut(BaseModel):
     user: UserProfileOut
     worker_profile: WorkerProfileOut
-    skill_with_zone: SkillWithZoneOut  
+    skill_with_zone: SkillWithZoneOut 
+    rating: RatingOut
 
     class Config:
         orm_mode = True

@@ -214,7 +214,7 @@ class WorkerSkillRating(database.Base):
     rating_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     worker_id = Column(String(36), ForeignKey('karigor.worker_profiles.worker_id', ondelete="CASCADE"), index=True)
     skill_id = Column(String(36), ForeignKey('karigor.skills.skill_id', ondelete="CASCADE"), index=True)
-    user_id = Column(String(36), ForeignKey('karigor.user_profiles.profile_id', ondelete="CASCADE"), index=True)
+    user_id = Column(String(36), ForeignKey('karigor.user_profiles.user_id', ondelete="CASCADE"), index=True)
     rating = Column(Numeric(3, 2), nullable=False, comment="Rating out of 5")
     review_text = Column(Text, nullable=True, comment="Optional review")
 
