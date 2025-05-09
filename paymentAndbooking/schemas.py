@@ -101,3 +101,10 @@ class BagItemResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class BookingConfirm(BaseModel):
+    booking_id: str
+
+class PaymentCreate(BaseModel):
+    booking_id: str
+    amount: float

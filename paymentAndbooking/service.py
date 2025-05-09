@@ -4,8 +4,8 @@ from fastapi import HTTPException, status
 import uuid
 import json
 
-from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag
-from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest
+from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag, Payment
+from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, PaymentCreate, BookingConfirm
 from kafka_producer_consumer import kafka_payment_booking_service
 
 
@@ -199,3 +199,23 @@ async def get_bag_items_by_user(db: Session, user_id: str, unregistered_address_
         )
 
     return data
+
+
+def confirm_booking(db: Session, confirm_data: BookingConfirm):
+    booking = db.query(Booking).filter(Booking.booking_id == confirm_data.booking_id).first()
+    if booking:
+        booking.status = "confirmed"
+        db.commit()
+        return {"message": "Booking confirmed"}
+    return {"error": "Booking not found"}
+
+def process_payment(db: Session, payment_data: PaymentCreate):
+    payment = Payment(
+        payment_id=str(uuid.uuid4()),
+        booking_id=payment_data.booking_id,
+        amount=payment_data.amount,
+        status="pending"
+    )
+    db.add(payment)
+    db.commit()
+    return payment

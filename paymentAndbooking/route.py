@@ -53,6 +53,14 @@ async def booking_summary(booking_id: str, db: Session = Depends(get_db)):
             detail=str(e)
         )
     
+@router.put("/confirm")
+def confirm_order(confirm_data: _schemas.BookingConfirm, db: Session = Depends(get_db)):
+    return _service.confirm_booking(db, confirm_data)
+
+@router.post("/payment")
+def make_payment(payment_data: _schemas.PaymentCreate, db: Session = Depends(get_db)):
+    return _service.process_payment(db, payment_data)
+    
 @router.post("/bag/add", response_model=_schemas.BagItemResponse, tags=["addtobag"])
 async def add_to_bag(request: _schemas.AddToBagRequest, db: Session = Depends(get_db)):
     try:
