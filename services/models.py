@@ -34,7 +34,7 @@ class Service(database.Base):
     ancestors = relationship('ServiceHierarchy', foreign_keys='ServiceHierarchy.descendant_id', back_populates='descendant', cascade="all, delete-orphan")
     
     # Relationships
-    offers = relationship("OfferService", back_populates="service", cascade="all, delete-orphan")
+    #offers = relationship("OfferService", back_populates="service", cascade="all, delete-orphan")
     booking_inputs = relationship("BookingInput", back_populates="service", cascade="all, delete-orphan")
     recommendations = relationship("ServiceRecommendation", back_populates="service", cascade="all, delete-orphan")
     preferred_services = relationship("ServicePreference", back_populates="service", cascade="all, delete-orphan")
