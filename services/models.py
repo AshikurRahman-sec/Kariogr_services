@@ -140,22 +140,6 @@ class ServiceRecommendation(database.Base):
     # Relationships
     service = relationship("Service", back_populates="recommendations")
 
-class OfferService(database.Base):
-    __tablename__ = 'offer_services'
-    __table_args__ = {"schema": "karigor"}
-
-    offer_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(255), nullable=False, index=True)
-    service_id = Column(String, ForeignKey('karigor.services.id', ondelete="CASCADE"), nullable=False, index=True)
-    image_url = Column(String(500), nullable=True)
-    status = Column(String(20), nullable=False, default="active")
-    created_at = Column(TIMESTAMP, server_default=func.now())
-    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
-
-    # Relationship with Service table
-    service = relationship("Service", back_populates="offers")
-
-
 class ServiceToolRequirement(database.Base):
     __tablename__ = 'service_tool_requirements'
     __table_args__ = {"schema": "karigor"}

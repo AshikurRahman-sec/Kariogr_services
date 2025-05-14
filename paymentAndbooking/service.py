@@ -1,11 +1,13 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
+from decimal import Decimal
+from datetime import datetime
 import uuid
 import json
 
-from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag, Payment
-from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, PaymentCreate, BookingConfirm
+from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag, Payment, Coupon, CouponUsage, OfferService
+from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, BookingConfirm, CreatePaymentRequest
 from kafka_producer_consumer import kafka_payment_booking_service
 
 
@@ -209,13 +211,71 @@ def confirm_booking(db: Session, confirm_data: BookingConfirm):
         return {"message": "Booking confirmed"}
     return {"error": "Booking not found"}
 
-def process_payment(db: Session, payment_data: PaymentCreate):
+def calculate_discount(amount: Decimal, discount_type: str, value: Decimal) -> Decimal:
+    if discount_type == "percentage":
+        return (amount * value) / 100
+    elif discount_type == "fixed_amount":
+        return min(amount, value)
+    return Decimal("0.00")
+
+def create_payment(db: Session, data: CreatePaymentRequest):
+    discount = Decimal("0.00")
+    coupon_usage_id = None
+
+    # Handle coupon
+    if data.coupon_code:
+        coupon = db.query(Coupon).filter(Coupon.code == data.coupon_code, Coupon.is_active == True).first()
+        if not coupon:
+            raise ValueError("Invalid or inactive coupon.")
+
+        if coupon.expiry_date < datetime.utcnow():
+            raise ValueError("Coupon expired.")
+
+        if coupon.used_count >= coupon.max_usage:
+            raise ValueError("Coupon usage limit reached.")
+
+        discount = calculate_discount(data.amount, coupon.discount_type.value, coupon.discount_value)
+
+        # Create CouponUsage record
+        coupon_usage = CouponUsage(
+            id=str(uuid.uuid4()),
+            user_id=data.user_id,
+            booking_id=data.booking_id,
+            coupon_id=coupon.id,
+            discount_applied=discount,
+            created_at=datetime.utcnow()
+        )
+        db.add(coupon_usage)
+        db.flush()  # to get ID before commit
+        coupon_usage_id = coupon_usage.id
+
+        # Increment coupon usage
+        coupon.used_count += 1
+
+    # Handle offer
+    if data.offer_id:
+        offer = db.query(OfferService).filter(OfferService.offer_id == data.offer_id).first()
+        if offer and offer.status == "active" and offer.start_date <= datetime.utcnow() <= offer.end_date:
+            offer_discount = calculate_discount(data.amount, offer.discount_type.value, offer.discount_value)
+            discount += offer_discount
+
+    final_price = max(data.amount - discount, Decimal("0.00"))
+
     payment = Payment(
-        payment_id=str(uuid.uuid4()),
-        booking_id=payment_data.booking_id,
-        amount=payment_data.amount,
-        status="pending"
+        id=str(uuid.uuid4()),
+        booking_id=data.booking_id,
+        user_id=data.user_id,
+        amount=data.amount,
+        discount_price=discount,
+        final_price=final_price,
+        method=data.method,
+        status="pending",
+        transaction_id=data.transaction_id,
+        coupon_usage_id=coupon_usage_id
     )
+
     db.add(payment)
     db.commit()
+    db.refresh(payment)
+
     return payment

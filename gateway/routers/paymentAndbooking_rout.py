@@ -75,11 +75,11 @@ async def create_booking_gateway(
     Gateway API that forwards the `create_booking` request to the Booking microservice.
     """
     try:
-        booking_payload = request_data.body
-
+        payload_dict = request_data.body.dict()
+        payload_dict["user_id"] = user["user_id"]
         response = requests.post(
             f"{PAYMENT_AND_BOOKING_BASE_URL}/api/create-booking",
-            json=booking_payload.dict(),
+            json=payload_dict,
         )
 
         if response.status_code == 200:
@@ -358,5 +358,105 @@ async def get_bag_list_gateway(
             data={},
             message=f"An unexpected error occurred: {str(e)}",
             code="503",
+            request_id=request_data.header.requestId,
+        )
+
+
+@router.post(
+    "/make-payment",
+    #response_model=_schemas.MakePaymentGatewayResponse,
+    #tags=["Payment"]
+)
+async def make_payment_gateway(
+    request_data: _schemas.MakePaymentGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        # Inject user_id from token
+        payload_dict = request_data.body.dict()
+        payload_dict["user_id"] = user["user_id"]
+        response = requests.post(
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/make-payment",
+            json=payload_dict,
+        )
+
+        if response.status_code in (200, 201):
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Payment created successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to create payment"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Booking service is unavailable")
+        return build_response(
+            data={},
+            message="Booking service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"Unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post(
+    "/payment-confirm",
+    response_model=_schemas.ConfirmBookingGatewayResponse,
+    #tags=["Payment"]
+)
+async def confirm_order_gateway(
+    request_data: _schemas.ConfirmBookingGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        response = requests.put(
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/payment-confirm",
+            json=request_data.body.dict(),
+        )
+
+        if response.status_code in (200, 201):
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Booking confirmed successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to confirm booking"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Booking service is unavailable")
+        return build_response(
+            data={},
+            message="Booking service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"Unexpected error occurred: {str(e)}",
+            code="500",
             request_id=request_data.header.requestId,
         )

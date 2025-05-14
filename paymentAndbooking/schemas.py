@@ -3,6 +3,7 @@ from typing import List, Optional, Dict
 from enum import Enum
 from datetime import datetime
 from typing import Any
+from decimal import Decimal
 import json
 
 class BookingType(str, Enum):
@@ -105,6 +106,30 @@ class BagItemResponse(BaseModel):
 class BookingConfirm(BaseModel):
     booking_id: str
 
-class PaymentCreate(BaseModel):
+class PaymentMethod(str, Enum):
+    CARD = "card"
+    MOBILE_BANKING = "mobile_banking"
+    CASH_ON_DELIVERY = "cash_on_delivery"
+
+
+class CreatePaymentRequest(BaseModel):
     booking_id: str
-    amount: float
+    user_id: str
+    amount: Decimal
+    method: PaymentMethod
+    coupon_code: Optional[str] = None
+    offer_id: Optional[str] = None
+    transaction_id: Optional[str] = None
+
+
+class PaymentResponse(BaseModel):
+    id: str
+    booking_id: str
+    user_id: str
+    amount: Decimal
+    discount_price: Optional[Decimal]
+    final_price: Decimal
+    method: str
+    status: str
+    transaction_id: Optional[str]
+    created_at: datetime

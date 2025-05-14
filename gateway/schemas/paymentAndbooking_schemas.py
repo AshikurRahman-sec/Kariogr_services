@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from schemas.base_schemas import RequestHeader, ResponseHeader, ErrorResponse
-from decimal import Decimal
 from enum import Enum
+from datetime import datetime
 
 class BookingType(str, Enum):
     WEEKLY = "weekly"
@@ -36,7 +36,7 @@ class BookingBase(BaseModel):
     worker_count: Optional[int] = None
     booking_type: BookingType
     service_id: str
-    user_id: str
+    #user_id: str
     dates: List[str]
     times: List[str]
 
@@ -130,3 +130,59 @@ class BagListGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: list[dict]
+
+class PaymentMethod(str, Enum):
+    CARD = "card"
+    MOBILE_BANKING = "mobile_banking"
+    CASH_ON_DELIVERY = "cash_on_delivery"
+
+# Request body
+class CreatePaymentBody(BaseModel):
+    booking_id: str
+    #user_id: str
+    amount: float
+    method: PaymentMethod
+    coupon_code: Optional[str] = None
+    offer_id: Optional[str] = None
+    transaction_id: Optional[str] = None
+
+# Gateway request format
+class MakePaymentGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: CreatePaymentBody
+
+# Payment response
+class PaymentResponseBody(BaseModel):
+    id: str
+    booking_id: str
+    user_id: str
+    amount: float
+    discount_price: Optional[float]
+    final_price: float
+    method: str
+    status: str
+    transaction_id: Optional[str]
+    created_at: datetime
+
+# Gateway response format
+class MakePaymentGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: PaymentResponseBody
+
+class ConfirmBookingBody(BaseModel):
+    booking_id: str
+
+class ConfirmBookingGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: ConfirmBookingBody
+
+class ConfirmBookingResponseBody(BaseModel):
+    message: str
+
+class ConfirmBookingGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: ConfirmBookingResponseBody

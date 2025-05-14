@@ -53,13 +53,23 @@ async def booking_summary(booking_id: str, db: Session = Depends(get_db)):
             detail=str(e)
         )
     
-@router.put("/confirm")
+@router.put("/payment-confirm", tags=["Bookings"])
 def confirm_order(confirm_data: _schemas.BookingConfirm, db: Session = Depends(get_db)):
-    return _service.confirm_booking(db, confirm_data)
+    try:
+        return _service.confirm_booking(db, confirm_data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
-@router.post("/payment")
-def make_payment(payment_data: _schemas.PaymentCreate, db: Session = Depends(get_db)):
-    return _service.process_payment(db, payment_data)
+@router.post("/make-payment", response_model=_schemas.PaymentResponse, tags=["Bookings"])
+def make_payment(payload: _schemas.CreatePaymentRequest, db: Session = Depends(get_db)):
+    try:
+        payment = _service.create_payment(db, payload)
+        return payment
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
 @router.post("/bag/add", response_model=_schemas.BagItemResponse, tags=["addtobag"])
 async def add_to_bag(request: _schemas.AddToBagRequest, db: Session = Depends(get_db)):
