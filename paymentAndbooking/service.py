@@ -8,7 +8,7 @@ import json
 
 from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag, Payment, Coupon, CouponUsage, OfferService
 from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, BookingConfirm, CreatePaymentRequest
-from kafka_producer_consumer import kafka_payment_booking_service
+#from kafka_producer_consumer import kafka_payment_booking_service
 
 
 
@@ -96,6 +96,8 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
     return {"message": "Workers added successfully", "booking_id": booking.booking_id}
 
 async def get_booking_summary(db: Session, booking_id: str):
+    from kafka_producer_consumer import kafka_payment_booking_service
+
     booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
     if not booking:
         return {"error": "Booking not found"}
@@ -178,6 +180,7 @@ async def remove_from_bag(db: Session, bag_id: str):
     return item
 
 async def get_bag_items_by_user(db: Session, user_id: str, unregistered_address_id: str):
+    from kafka_producer_consumer import kafka_payment_booking_service
     data = []
     query = db.query(AddToBag)
     if user_id:
@@ -279,3 +282,6 @@ def create_payment(db: Session, data: CreatePaymentRequest):
     db.refresh(payment)
 
     return payment
+
+def get_cart_data(db: Session):
+    return [row.service_id for row in db.query(AddToBag.service_id).all()]

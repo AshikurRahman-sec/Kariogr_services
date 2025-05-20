@@ -121,3 +121,28 @@ async def create_worker_skill_rating(
         return await _service.create_or_update_worker_skill_rating(db, request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/worker_details/{worker_id}/{skill_id}", 
+            response_model=_schemas.WorkerWithSkillsAndZonesOut
+            )
+async def get_worker_details(worker_id: str, skill_id: str, db: Session = Depends(get_db)):
+    result = await _service.get_worker_details_by_worker_and_skill(db, worker_id, skill_id)
+    try:
+        result = await _service.get_worker_details_by_worker_and_skill(db, worker_id, skill_id)
+        if not result:
+            raise HTTPException(status_code=404, detail="Worker or skill not found")
+        return result
+    except Exception as e:
+        logging.error(f"Error getting worker details for worker_id={worker_id}, skill_id={skill_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+@router.post("/", response_model=_schemas.CommentResponse)
+async def post_comment(comment: _schemas.CreateComment, db: Session = Depends(get_db)):
+    try:
+        return await _service.create_comment(db, user_id, comment)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{worker_id}/{skill_id}", response_model=List[CommentResponse])
+def fetch_comments(worker_id: str, skill_id: str, db: Session = Depends(get_db)):
+    return comment_service.get_comments(db, worker_id, skill_id)

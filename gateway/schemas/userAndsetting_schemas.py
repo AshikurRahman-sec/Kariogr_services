@@ -168,3 +168,17 @@ class CreateWorkerSkillRatingResponse(BaseModel):
     header: ResponseHeader
     meta: Dict = {}
     body: Dict[str, Optional[Dict]]
+
+class WorkerDetailsRequestBody(BaseModel):
+    worker_id: str
+    skill_id: str
+
+class WorkerDetailsGatewayRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: WorkerDetailsRequestBody
+
+class WorkerDetailsGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: WorkerWithSkillsAndZonesOut

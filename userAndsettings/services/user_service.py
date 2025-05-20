@@ -260,3 +260,56 @@ async def create_or_update_worker_skill_rating(db: _orm.Session, request: _schem
         total_ratings=total_ratings
     )
  
+async def get_worker_details_by_worker_and_skill(db: _orm.Session, worker_id: str, skill_id: str) -> _schemas.WorkerWithSkillsAndZonesOut | None:
+    # Step 1: Get WorkerSkillZone (to include zone + skill data)
+    ws_zone = (
+        db.query(_model.WorkerSkillZone)
+        .options(
+            _orm.joinedload(_model.WorkerSkillZone.worker).joinedload(_model.WorkerProfile.user),
+            _orm.joinedload(_model.WorkerSkillZone.skill),
+            _orm.joinedload(_model.WorkerSkillZone.worker_zone),
+        )
+        .filter(
+            _model.WorkerSkillZone.worker_id == worker_id,
+            _model.WorkerSkillZone.skill_id == skill_id
+        )
+        .first()
+    )
+
+    if not ws_zone:
+        return None
+
+    # Step 2: Get average rating and count
+    avg_rating_result = (
+        db.query(
+            func.avg(_model.WorkerSkillRating.rating).label("average"),
+            func.count(_model.WorkerSkillRating.rating).label("count")
+        )
+        .filter(
+            _model.WorkerSkillRating.worker_id == worker_id,
+            _model.WorkerSkillRating.skill_id == skill_id
+        )
+        .first()
+    )
+
+    avg_rating = float(avg_rating_result.average) if avg_rating_result.average else 0.0
+    rating_count = avg_rating_result.count or 0
+
+    # Step 3: Construct response
+    return _schemas.WorkerWithSkillsAndZonesOut(
+    user=_schemas.UserProfileOut.from_orm(ws_zone.worker.user),
+    worker_profile=_schemas.WorkerProfileOut.from_orm(ws_zone.worker),
+    skill_with_zone=_schemas.SkillWithZoneOut(
+        skill=_schemas.SkillOut(
+            skill_id=ws_zone.skill.skill_id,
+            skill_name=ws_zone.skill.skill_name,
+            category=ws_zone.skill.category,
+            description=ws_zone.skill.description,
+            service_charge=float(ws_zone.service_charge),
+            charge_unit=ws_zone.charge_unit,
+            discount=float(ws_zone.discount or 0.0),
+        ),
+        worker_zone=_schemas.WorkerZoneOut.from_orm(ws_zone.worker_zone),
+    ),
+    rating=_schemas.RatingOut(average=avg_rating, count=rating_count)
+)

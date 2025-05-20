@@ -2,6 +2,8 @@ import asyncio
 import json
 import uuid
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+from database import get_db
+from service import get_cart_data
 
 class PaymentBookingService:
     def __init__(self, brokers: str, response_topics: list):
@@ -14,14 +16,23 @@ class PaymentBookingService:
     async def start(self):
         await self.producer.start()
         await self.consumer.start()
-        asyncio.create_task(self.listen_for_responses())
+        asyncio.create_task(self.process_requests())
 
-    async def listen_for_responses(self):
+    async def process_requests(self):
         async for msg in self.consumer:
-            response = json.loads(msg.value.decode("utf-8"))
-            request_id = response.get("request_id")
-            if request_id in self.pending_requests:
-                self.pending_requests[request_id].set_result(response)
+            request = json.loads(msg.value.decode("utf-8"))
+            request_id = request.get("request_id")
+            if request.get('request_type') == 'cart_info':
+                db_gen = get_db()
+                db = next(db_gen)
+                cart_data = get_cart_data(db)  # Fetch user details
+                print(cart_data)
+                db_gen.close()
+                response = {"request_id": request_id, "cart_data": cart_data}
+                await self.producer.send_and_wait("service_request", json.dumps(response).encode("utf-8"))
+            elif request_id in self.pending_requests:
+                future = self.pending_requests.pop(request_id)
+                future.set_result(request)  # or request['data']
 
     async def get_user_details(self, request_topic, user_id: str):
         request_id = str(uuid.uuid4())

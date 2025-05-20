@@ -75,7 +75,7 @@ def get_second_level_hierarchy(
         )
     
 @router.get("/service/{service_id}/hierarchy/")
-def get_descendant_hierarchy(
+async def get_descendant_hierarchy(
     service_id: UUID,
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="Page number"),
@@ -87,7 +87,7 @@ def get_descendant_hierarchy(
     """
     try:
         offset = (page - 1) * size
-        result = services.get_descendant_hierarchy(db, service_id, offset, size)
+        result = await services.get_descendant_hierarchy(db, service_id, offset, size)
 
         return {
             "service_id": service_id,

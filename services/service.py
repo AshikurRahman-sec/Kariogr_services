@@ -93,13 +93,16 @@ def get_second_level_hierarchy(
         "total_count": total_count,
     }
 
-def get_descendant_hierarchy(
+async def get_descendant_hierarchy(
     db: Session, service_id: UUID, offset: int, limit: int
 ):
     """
     Fetch paginated direct descendants of a service (first-level hierarchy),
     including up to 5 second-level descendants for each first-level descendant.
     """
+    # from kafka_producer_consumer import kafka_service_service
+    # cart_services = await kafka_service_service.get_cart_data('payment_response')
+    
     # Query first-level descendants
     first_level_query = (
         select(Service.id, Service.name, ServiceLogo.image_name, Service.is_leaf, ServiceLogo.image_url)
@@ -134,12 +137,14 @@ def get_descendant_hierarchy(
             "image_url": first_service.image_url,
             "is_leaf": first_service.is_leaf,
             "second_level_hierarchy": [
+                
                 {
                     "service_id": child.id,
                     "service_name": child.name,
                     "image_name": child.image_name,
                     "image_url": child.image_url,
                     "is_leaf": child.is_leaf,
+                    #"in_cart": child.is_leaf and str(child.id) in cart_services
                 }
                 for child in second_level_data
             ],

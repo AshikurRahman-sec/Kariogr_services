@@ -22,7 +22,7 @@ class UserProfileOut(BaseModel):
     profile_picture_url: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # WorkerProfile Schemas
 class WorkerProfileUpdate(BaseModel):
@@ -38,7 +38,7 @@ class WorkerProfileOut(BaseModel):
     bio: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UnregisteredUserAddressCreate(BaseModel):
     mobile_id: str
@@ -63,7 +63,7 @@ class WorkerZoneOut(BaseModel):
     longitude: Optional[Decimal] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Skill Info
 class SkillOut(BaseModel):
@@ -76,7 +76,7 @@ class SkillOut(BaseModel):
     discount: float
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Request Schema for Filtering Workers
 class WorkerFilterRequest(BaseModel):
@@ -88,7 +88,7 @@ class SkillWithZoneOut(BaseModel):
     worker_zone: WorkerZoneOut
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class RatingOut(BaseModel):
     average: float | None
@@ -101,7 +101,7 @@ class WorkerWithSkillsAndZonesOut(BaseModel):
     rating: RatingOut
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SearchWorkerDetails(BaseModel):
     data:List[WorkerWithSkillsAndZonesOut]
@@ -110,7 +110,7 @@ class SearchWorkerDetails(BaseModel):
     total_services: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class WorkerDetailsOut(BaseModel):
     user: UserProfileOut
@@ -119,7 +119,7 @@ class WorkerDetailsOut(BaseModel):
     working_zone: WorkerZoneOut
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Request Schema
 class WorkerByZoneRequest(BaseModel):
@@ -134,7 +134,7 @@ class PaginatedWorkerListResponse(BaseModel):
     size: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CreateWorkerSkillRatingRequest(BaseModel):
     worker_id: str

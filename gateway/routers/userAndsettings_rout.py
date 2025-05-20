@@ -288,3 +288,53 @@ async def create_worker_skill_rating_gateway(
             code="500",
             request_id=request_data.header.requestId,
         )
+
+@router.post(
+    "/worker-details",
+    response_model=_schemas.WorkerDetailsGatewayResponse,
+)
+async def get_worker_details_gateway(
+    request_data: _schemas.WorkerDetailsGatewayRequest,
+    #user: dict = Depends(verify_token),
+):
+    try:
+        worker_id = request_data.body.worker_id
+        skill_id = request_data.body.skill_id
+
+        # Call the service
+        response = requests.get(
+            f"{USER_SETTINGS_BASE_URL}/api/worker_details/{worker_id}/{skill_id}",
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Worker details retrieved successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to retrieve worker details"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Worker service is unavailable")
+        return build_response(
+            data={},
+            message="Worker service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
