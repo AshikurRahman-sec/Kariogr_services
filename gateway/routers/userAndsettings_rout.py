@@ -338,3 +338,208 @@ async def get_worker_details_gateway(
             code="500",
             request_id=request_data.header.requestId,
         )
+
+@router.post(
+    "/post-comment",
+    response_model=_schemas.CommentGatewayResponse,
+)
+async def post_comment_gateway(
+    request_data: _schemas.CommentGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        body_data = request_data.body.dict()
+        body_data["user_id"] = user["user_id"]  # Insert user_id into body
+
+        response = requests.post(
+            f"{USER_SETTINGS_BASE_URL}/api/post-comment",
+            json=body_data,
+        )
+
+        if response.status_code in (200, 201):
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Comment posted successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to post comment"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Comment service is unavailable")
+        return build_response(
+            data={},
+            message="Comment service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post(
+    "/get-comment",
+    response_model=_schemas.CommentListGatewayResponse,
+)
+async def get_comments_gateway(
+    request_data: _schemas.CommentListGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        worker_id = request_data.body.worker_id
+        skill_id = request_data.body.skill_id
+        limit = request_data.body.limit
+        offset = request_data.body.offset
+
+        response = requests.get(
+            f"{USER_SETTINGS_BASE_URL}/api/get-comment/{worker_id}/{skill_id}",
+            params={"limit": limit, "offset": offset},
+        )
+
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Comments fetched successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to fetch comments"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Comment service is unavailable")
+        return build_response(
+            data={},
+            message="Comment service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+    
+@router.post(
+    "/comment-replies",
+    response_model=_schemas.CommentListGatewayResponse,
+)
+async def get_comment_replies_gateway(
+    request_data: _schemas.CommentReplyListGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        parent_comment_id = request_data.body.parent_comment_id
+        limit = request_data.body.limit
+        offset = request_data.body.offset
+
+        response = requests.get(
+            f"{USER_SETTINGS_BASE_URL}/api/comment/replies/{parent_comment_id}",
+            params={"limit": limit, "offset": offset},
+        )
+
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Replies fetched successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to fetch replies"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Comment service is unavailable")
+        return build_response(
+            data={},
+            message="Comment service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post(
+    "/comment-reaction",
+    response_model=_schemas.CommentReactionGatewayResponse,
+)
+async def comment_reaction_gateway(
+    request_data: _schemas.CommentReactionGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        response = requests.post(
+            f"{USER_SETTINGS_BASE_URL}/api/comment/reaction",
+            json=request_data.body.dict(),
+        )
+
+        if response.status_code == 200 or response.status_code == 201:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Reaction submitted successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to submit reaction"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Comment service is unavailable")
+        return build_response(
+            data={},
+            message="Comment service is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+

@@ -137,14 +137,14 @@ async def get_worker_details(worker_id: str, skill_id: str, db: Session = Depend
         logging.error(f"Error getting worker details for worker_id={worker_id}, skill_id={skill_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
-@router.post("/", response_model=_schemas.CommentResponse)
+@router.post("/post-comment", response_model=_schemas.CommentResponse)
 async def post_comment(comment: _schemas.CreateComment, db: Session = Depends(get_db)):
     try:
         return await _service.create_comment(db, comment)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/{worker_id}/{skill_id}", response_model=List[_schemas.CommentResponse])
+@router.get("/get-comment/{worker_id}/{skill_id}", response_model=List[_schemas.CommentResponse])
 def fetch_comments(
     worker_id: str,
     skill_id: str,
@@ -153,11 +153,11 @@ def fetch_comments(
     db: Session = Depends(get_db)
 ):
     try:
-        return _service.comment_service.get_top_level_comments(db, worker_id, skill_id, limit, offset)
+        return _service.get_top_level_comments(db, worker_id, skill_id, limit, offset)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("/replies/{parent_comment_id}", response_model=List[_schemas.CommentResponse])
+@router.get("/comment/replies/{parent_comment_id}", response_model=List[_schemas.CommentResponse])
 def fetch_replies(
     parent_comment_id: str,
     limit: int = 10,
@@ -169,7 +169,7 @@ def fetch_replies(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.post("/reaction", response_model=_schemas.ReactionResponse)
+@router.post("/comment/reaction", response_model=_schemas.ReactionResponse)
 def react_to_comment(
     reaction_data: _schemas.CreateReaction,
     db: Session = Depends(get_db),

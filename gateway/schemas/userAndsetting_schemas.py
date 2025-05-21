@@ -182,3 +182,104 @@ class WorkerDetailsGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: WorkerWithSkillsAndZonesOut
+
+class CommentGatewayBody(BaseModel):
+    worker_id: str
+    skill_id: str
+    #user_id: str
+    comment_text: str
+    parent_comment_id: Optional[str] = None
+
+
+class CommentGatewayRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: CommentGatewayBody
+
+
+class CommentReactionSchema(BaseModel):
+    reaction_type: str
+
+
+class CommentResponseBase(BaseModel):
+    comment_text: str
+    parent_comment_id: Optional[str] = None
+
+
+class CommentGatewayResponseBody(CommentResponseBase):
+    comment_id: str
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+    depth: int
+    reactions: List[CommentReactionSchema] = []
+    replies: List["CommentGatewayResponseBody"] = []
+
+    class Config:
+        orm_mode = True
+
+class CommentGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: CommentGatewayResponseBody
+
+class CommentListGatewayBody(BaseModel):
+    worker_id: str
+    skill_id: str
+    limit: int = 10
+    offset: int = 0
+
+
+class CommentListGatewayRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: CommentListGatewayBody
+
+
+class CommentListGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: List[CommentGatewayResponseBody]
+
+class CommentReplyListGatewayBody(BaseModel):
+    parent_comment_id: str
+    limit: int = 10
+    offset: int = 0
+
+
+class CommentReplyListGatewayRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: CommentReplyListGatewayBody
+
+class CreateReaction(BaseModel):
+    comment_id: str
+    reaction_type: str = Field(..., example="like")
+    user_id: str
+
+class ReactionResponse(BaseModel):
+    reaction_id: str
+    comment_id: str
+    user_id: str
+    reaction_type: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class CommentReactionGatewayRequest(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: CreateReaction  # from your existing service schemas
+
+
+class CommentReactionGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: ReactionResponse  # from your existing service schemas
+
+
+
+CommentGatewayResponseBody.update_forward_refs()
+

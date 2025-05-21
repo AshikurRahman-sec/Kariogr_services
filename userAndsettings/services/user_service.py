@@ -315,7 +315,7 @@ async def get_worker_details_by_worker_and_skill(db: _orm.Session, worker_id: st
 )
 
 
-def create_comment(db: _orm.Session, comment_data: _schemas.CreateComment):
+async def create_comment(db: _orm.Session, comment_data: _schemas.CreateComment):
     parent_comment = None
     depth = 0
 
@@ -327,8 +327,9 @@ def create_comment(db: _orm.Session, comment_data: _schemas.CreateComment):
         # if depth > 3:
         #     raise ValueError("Max reply depth exceeded.")
 
+    user_profiel_id = db.query(_model.UserProfile).filter_by(user_id=comment_data.user_id).first()
     comment = _model.WorkerSkillComment(
-        user_id=comment_data.user_id,
+        user_id=user_profiel_id,
         worker_id=comment_data.worker_id,
         skill_id=comment_data.skill_id,
         comment_text=comment_data.comment_text,

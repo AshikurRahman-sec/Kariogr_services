@@ -204,3 +204,6 @@ class ReactionResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+CommentResponse.update_forward_refs()
