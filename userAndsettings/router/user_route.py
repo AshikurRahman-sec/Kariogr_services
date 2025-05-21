@@ -1,6 +1,7 @@
 from fastapi import HTTPException, APIRouter, Depends, Request, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from typing import List
 from datetime import datetime
 from uuid import UUID
 import pika
@@ -139,10 +140,41 @@ async def get_worker_details(worker_id: str, skill_id: str, db: Session = Depend
 @router.post("/", response_model=_schemas.CommentResponse)
 async def post_comment(comment: _schemas.CreateComment, db: Session = Depends(get_db)):
     try:
-        return await _service.create_comment(db, user_id, comment)
+        return await _service.create_comment(db, comment)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/{worker_id}/{skill_id}", response_model=List[CommentResponse])
-def fetch_comments(worker_id: str, skill_id: str, db: Session = Depends(get_db)):
-    return comment_service.get_comments(db, worker_id, skill_id)
+@router.get("/{worker_id}/{skill_id}", response_model=List[_schemas.CommentResponse])
+def fetch_comments(
+    worker_id: str,
+    skill_id: str,
+    limit: int = 10,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    try:
+        return _service.comment_service.get_top_level_comments(db, worker_id, skill_id, limit, offset)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/replies/{parent_comment_id}", response_model=List[_schemas.CommentResponse])
+def fetch_replies(
+    parent_comment_id: str,
+    limit: int = 10,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    try:
+        return _service.get_replies(db, parent_comment_id, limit, offset)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/reaction", response_model=_schemas.ReactionResponse)
+def react_to_comment(
+    reaction_data: _schemas.CreateReaction,
+    db: Session = Depends(get_db),
+):
+    try:
+        return _service.create_reaction(db, reaction_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

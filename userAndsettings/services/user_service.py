@@ -313,3 +313,94 @@ async def get_worker_details_by_worker_and_skill(db: _orm.Session, worker_id: st
     ),
     rating=_schemas.RatingOut(average=avg_rating, count=rating_count)
 )
+
+
+def create_comment(db: _orm.Session, comment_data: _schemas.CreateComment):
+    parent_comment = None
+    depth = 0
+
+    if comment_data.parent_comment_id:
+        parent_comment = db.query(_model.WorkerSkillComment).filter_by(comment_id=comment_data.parent_comment_id).first()
+        if not parent_comment:
+            raise ValueError("Parent comment not found.")
+        depth = parent_comment.depth + 1
+        # if depth > 3:
+        #     raise ValueError("Max reply depth exceeded.")
+
+    comment = _model.WorkerSkillComment(
+        user_id=comment_data.user_id,
+        worker_id=comment_data.worker_id,
+        skill_id=comment_data.skill_id,
+        comment_text=comment_data.comment_text,
+        parent_comment_id=comment_data.parent_comment_id,
+        depth=depth
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+def get_top_level_comments(db: _orm.Session, worker_id: str, skill_id: str, limit: int, offset: int):
+    comments = db.query(_model.WorkerSkillComment)\
+        .filter_by(worker_id=worker_id, skill_id=skill_id, parent_comment_id=None)\
+        .order_by(_model.WorkerSkillComment.created_at.desc())\
+        .offset(offset)\
+        .limit(limit)\
+        .all()
+
+    return [{
+        "comment_id": c.comment_id,
+        "user_id": c.user_id,
+        "comment_text": c.comment_text,
+        "created_at": c.created_at,
+        "updated_at": c.updated_at,
+        "depth": c.depth,
+        "reactions": [{"reaction_type": r.reaction_type} for r in c.reactions],
+        "replies": []  # load replies lazily
+    } for c in comments]
+
+def get_replies(db: _orm.Session, parent_comment_id: str, limit: int, offset: int):
+    replies = db.query(_model.WorkerSkillComment)\
+        .filter_by(parent_comment_id=parent_comment_id)\
+        .order_by(_model.WorkerSkillComment.created_at.asc())\
+        .offset(offset)\
+        .limit(limit)\
+        .all()
+
+    return [{
+        "comment_id": r.comment_id,
+        "user_id": r.user_id,
+        "comment_text": r.comment_text,
+        "created_at": r.created_at,
+        "updated_at": r.updated_at,
+        "depth": r.depth,
+        "reactions": [{"reaction_type": rc.reaction_type} for rc in r.reactions],
+        "replies": []  # nested replies can be added if needed
+    } for r in replies]
+
+def create_reaction(db: _orm.Session, user_id: str, reaction_data: _schemas.CreateReaction):
+    # Check if the user already reacted to this comment
+    existing = db.query(_model.CommentReaction).filter_by(
+        comment_id=str(reaction_data.comment_id),
+        user_id=user_id
+    ).first()
+
+    if existing:
+        # If same type, return; if different, update
+        if existing.reaction_type == reaction_data.reaction_type:
+            return existing
+        existing.reaction_type = reaction_data.reaction_type
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    # Create new reaction
+    new_reaction = _model.CommentReaction(
+        comment_id=str(reaction_data.comment_id),
+        user_id=user_id,
+        reaction_type=reaction_data.reaction_type
+    )
+    db.add(new_reaction)
+    db.commit()
+    db.refresh(new_reaction)
+    return new_reaction

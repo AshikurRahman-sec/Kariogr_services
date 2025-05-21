@@ -164,3 +164,43 @@ class CreateWorkerSkillRatingResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class CommentReactionSchema(BaseModel):
+    reaction_type: str
+
+class CommentBase(BaseModel):
+    comment_text: str
+    parent_comment_id: Optional[str] = None
+
+class CreateComment(CommentBase):
+    worker_id: str
+    skill_id: str
+    user_id: str
+    parent_comment_id: Optional[str] = None
+
+class CommentResponse(CommentBase):
+    comment_id: str
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+    depth: int
+    reactions: List[CommentReactionSchema] = []
+    replies: List["CommentResponse"] = []
+
+    class Config:
+        orm_mode = True
+
+class CreateReaction(BaseModel):
+    comment_id: str
+    reaction_type: str = Field(..., example="like")
+    user_id: str
+
+class ReactionResponse(BaseModel):
+    reaction_id: str
+    comment_id: str
+    user_id: str
+    reaction_type: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
