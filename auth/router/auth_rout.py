@@ -153,5 +153,4 @@ async def firebase_auth(data: _schemas.FirebaseAuthRequest, db: Session = Depend
         raise exc  # Propagate HTTPExceptions with appropriate status codes
     except Exception as e:
         # Log the error if needed
-        print(e)
         raise HTTPException(status_code=500, detail="An unexpected error occurred during Firebase authentication")

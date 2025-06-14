@@ -8,7 +8,7 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:3.4.0
     container_name: kafka
     ports:
       - "9092:9092"
@@ -18,5 +18,6 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
       - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ENABLE_KRAFT=no
     depends_on:
       - zookeeper
