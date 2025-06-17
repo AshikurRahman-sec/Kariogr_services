@@ -90,6 +90,7 @@ class WorkerAddonService(database.Base):
     addon_service_id = Column(String(36), nullable=False)  # Should reference an add-on service table
     quantity = Column(Integer, nullable=False, default=1)
     charge_amount = Column(Numeric(10, 2), nullable=False)
+    charge_unit = Column(Enum('hourly', 'daily', 'per job', name='charge_unit_enum'))
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
 
