@@ -60,6 +60,7 @@ class BookingWorker(database.Base):
     worker_id = Column(String(36), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
+    tools_required = Column(Boolean, nullable=False, default=False)
 
     booking = relationship("Booking", back_populates="workers")
     skills = relationship("BookingWorkerSkill", back_populates="booking_worker")

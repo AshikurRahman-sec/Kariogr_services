@@ -60,6 +60,7 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
         booking_worker = BookingWorker(
             booking_id=booking.booking_id,
             worker_id=worker.worker_id,
+            tools_required=worker.tools_required
         )
         db.add(booking_worker)
         db.commit()
@@ -114,9 +115,11 @@ async def get_booking_summary(db: Session, booking_id: str):
         worker_details = await kafka_payment_booking_service.get_worker_details('user_request', worker.worker_id)
 
         skills_list = []
+        total_charge = 0
         for skill in skills:
             service_details = await kafka_payment_booking_service.get_service_details('service_request', skill.skill_id)
             #print("here",service_details)
+            total_charge = total_charge+skill.charge_amount
             skills_list.append(
                 {
                 "skill_id": skill.skill_id,
@@ -131,6 +134,7 @@ async def get_booking_summary(db: Session, booking_id: str):
         for addon in addons:
             service_details = await kafka_payment_booking_service.get_service_details('service_request', addon.addon_service_id)
             worker_details = await kafka_payment_booking_service.get_worker_details('user_request', addon.booking_worker_id)
+            total_charge = total_charge+addon.charge_amount
             addons_list.append(
                 {
                     "addon_service_id": addon.addon_service_id,
@@ -153,7 +157,7 @@ async def get_booking_summary(db: Session, booking_id: str):
     return {
         "booking_id": booking.booking_id,
         "user_id": booking.user_id,
-        "user_name": f"{user_details['user_data']['first_name']} {user_details['user_data']['last_name']}",
+        "user_name": f"{user_details['user_data']["user_auth_info"]['first_name']} {user_details['user_data']["user_auth_info"]['last_name']}",
         "service_id": booking.service_id,
         "booking_time": booking.get_times(),  # assuming this returns a list
         "workers": workers_list,

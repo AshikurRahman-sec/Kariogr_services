@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import uuid
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
 from services.user_service import get_user_profile_by_user_id, get_worker_details_by_worker_id
@@ -15,6 +16,7 @@ class UserAndSettingsService:
         self.brokers = brokers
         self.consumer = AIOKafkaConsumer(*response_topics, bootstrap_servers=self.brokers, group_id="user_service_group", auto_offset_reset="earliest")
         self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
+        self.pending_requests = {}
 
     async def start(self):
         await self.consumer.start()
@@ -39,6 +41,19 @@ class UserAndSettingsService:
                 db_gen.close()
                 response = {"request_id": request_id, "user_id": request["user_id"], "user_data": user_data}
                 await self.producer.send_and_wait("payment_response", json.dumps(response).encode("utf-8"))
+            elif request_id in self.pending_requests:
+                future = self.pending_requests.pop(request_id)
+                future.set_result(request)  # or request['data']
+
+    async def get_user_auth_info(self, request_topic, user_id: str):
+        request_id = str(uuid.uuid4())
+        message = json.dumps({"request_id": request_id, "user_id": user_id, "request_type": 'user_auth_info'}).encode("utf-8")
+    
+        future = asyncio.get_event_loop().create_future()
+        self.pending_requests[request_id] = future
+
+        await self.producer.send_and_wait(request_topic, message)  # Dynamic request topic
+        return await future  # Wait for the response
     
 
     async def stop(self):

@@ -7,7 +7,7 @@ import database as _database
 
 #from router.oauth_rout import router as oauth_router
 from router.auth_rout import router as auth_router
-from kafka_producer import kafka_producer_service
+from auth.kafka_producer_consumer import kafka_producer_service
 
 
 app = FastAPI()

@@ -11,7 +11,7 @@ import logging
 from schemas.oauth_schemas import UserCreate, GenerateOtp, VerifyOtp
 from schemas import auth_schemas as _schemas
 from model import auth_model as _model
-from kafka_producer import kafka_producer_service
+from auth.kafka_producer_consumer import kafka_auth_service
 from utilities import verify_password, get_password_hash, create_access_token, decode_token
 
 
@@ -57,7 +57,7 @@ async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
     }
 
     try:
-        await kafka_producer_service.send_message("email_verification", message)
+        await kafka_auth_service.send_message("email_verification", message)
     except Exception as err:
         print(f"Failed to publish message: {err}")
 
@@ -211,3 +211,7 @@ async def firebase_login(db: _orm.Session, id_token: str):
 
     # Generate tokens
     return await create_tokens(db, db_user.user_id)
+
+async def get_user(db: _orm.Session, user_id:str):
+    db_user = db.query(_model.UserAuth).filter(_model.UserAuth.user_id == user_id).first()
+    return db_user
