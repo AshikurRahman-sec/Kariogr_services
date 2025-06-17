@@ -210,7 +210,7 @@ async def firebase_login(db: _orm.Session, id_token: str):
         db.refresh(db_user)
 
     # Generate tokens
-    return create_tokens(db, db_user.user_id)
+    return await create_tokens(db, db_user.user_id)
 
 async def get_user(db: _orm.Session, user_id:str):
     db_user = db.query(_model.UserAuth).filter(_model.UserAuth.user_id == user_id).first()
