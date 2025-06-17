@@ -16,7 +16,7 @@ from jose import JWTError, jwt
 import database as _database
 import model.auth_model as _models
 import schemas.oauth_schemas as _schemas
-from kafka_producer import kafka_producer_service
+from auth.kafka_producer_consumer import kafka_auth_service
 
 # Load environment variables
 JWT_SECRET = os.getenv("JWT_SECRET")
@@ -85,7 +85,7 @@ def send_otp(email, otp, channel):
                 }
 
     try:
-        kafka_producer_service.send_message("email_notification", message)
+        kafka_auth_service.send_message("email_notification", message)
     except Exception as err:
         print(f"Failed to publish message: {err}")
 
