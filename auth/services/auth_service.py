@@ -11,14 +11,12 @@ import logging
 from schemas.oauth_schemas import UserCreate, GenerateOtp, VerifyOtp
 from schemas import auth_schemas as _schemas
 from model import auth_model as _model
-from auth.kafka_producer_consumer import kafka_auth_service
 from utilities import verify_password, get_password_hash, create_access_token, decode_token
-
 
 logging.basicConfig(level=logging.INFO)
 
 async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
-
+    from kafka_producer_consumer import kafka_auth_service
     # Try to get user by email or phone
     query = db.query(_model.UserAuth)
     if user.email:

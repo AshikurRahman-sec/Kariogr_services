@@ -5,7 +5,7 @@ from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from database import get_db
 from service import get_cart_data
 
-class AuthService:
+class PaymentBookingService:
     def __init__(self, brokers: str, response_topics: list):
         self.brokers = brokers
         self.response_topics = response_topics
@@ -70,7 +70,7 @@ class AuthService:
 
 
 #Instance Creation
-kafka_auth_service = AuthService(
+kafka_payment_booking_service = PaymentBookingService(
     brokers="localhost:9092",
     response_topics=["payment_response"]  # Provide response topic
 )

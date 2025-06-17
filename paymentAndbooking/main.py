@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from models import *
 import database as _database
 from route import router as paymentAndbooking_router
-from kafka_producer_consumer import kafka_auth_service
+from kafka_producer_consumer import kafka_payment_booking_service
 
 
 app = FastAPI()
@@ -31,11 +31,11 @@ app.add_middleware(
 @app.on_event("startup")
 async def on_startup():
     _database.create_database()
-    await kafka_auth_service.start()
+    await kafka_payment_booking_service.start()
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await kafka_auth_service.stop()
+    await kafka_payment_booking_service.stop()
 
 # Endpoint to check if the API is live
 @app.get("/check_api")

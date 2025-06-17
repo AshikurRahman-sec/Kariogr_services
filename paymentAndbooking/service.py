@@ -157,7 +157,7 @@ async def get_booking_summary(db: Session, booking_id: str):
     return {
         "booking_id": booking.booking_id,
         "user_id": booking.user_id,
-        "user_name": f"{user_details['user_data']["user_auth_info"]['first_name']} {user_details['user_data']["user_auth_info"]['last_name']}",
+        "user_name": f"{user_details['user_data']['user_profile']['first_name']} {user_details['user_data']['user_profile']['last_name']}",
         "service_id": booking.service_id,
         "booking_time": booking.get_times(),  # assuming this returns a list
         "workers": workers_list,

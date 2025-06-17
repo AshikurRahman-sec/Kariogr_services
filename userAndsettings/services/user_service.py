@@ -5,7 +5,6 @@ from uuid import UUID
 from schemas import user_schemas as _schemas
 from models import user_model as _model
 from fastapi.encoders import jsonable_encoder
-from kafka_producer_consumer import UserAndSettingsService
 
 
 def update_user_profile(db: _orm.Session, user_id: str, profile_data: _schemas.UserProfileUpdate):
@@ -189,6 +188,7 @@ async def get_workers_by_zone(db: _orm.Session, worker_id: str, district: str, s
 
 
 async def get_user_profile_by_user_id(user_id: str, db: _orm.Session):
+    from kafka_producer_consumer import kafka_user_settings_service
     user_profile = (
         db.query(_model.UserProfile)
         .options(
@@ -198,11 +198,11 @@ async def get_user_profile_by_user_id(user_id: str, db: _orm.Session):
         .filter(_model.UserProfile.user_id == user_id)
         .first()
     )
-    user_auth_info = await UserAndSettingsService.get_user_auth_info('auth_info', user_profile.user_id)
+    #user_auth_info = await kafka_user_settings_service.get_user_auth_info('auth_info', user_id)
 
     return {
             "user_profile": jsonable_encoder(user_profile),
-            "user_auth_info": jsonable_encoder(user_auth_info)
+            #"user_auth_info": jsonable_encoder(user_auth_info)
         }
 
 async def get_worker_details_by_worker_id(worker_id: str, db: _orm.Session):
