@@ -7,7 +7,7 @@ import uuid
 import json
 
 from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag, Payment, Coupon, CouponUsage, OfferService
-from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, BookingConfirm, CreatePaymentRequest
+from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, BookingConfirm, CreatePaymentRequest, ApplyCouponRequest, CouponInfoResponse
 #from kafka_producer_consumer import kafka_payment_booking_service
 
 
@@ -289,3 +289,82 @@ def create_payment(db: Session, data: CreatePaymentRequest):
 
 def get_cart_data(db: Session):
     return [row.service_id for row in db.query(AddToBag.service_id).all()]
+
+def apply_coupon(db: Session, data: ApplyCouponRequest):
+    # Check if coupon exists and is valid
+    coupon = db.query(Coupon).filter(Coupon.code == data.coupon_code).first()
+
+    if not coupon:
+        raise ValueError("Coupon code does not exist.")
+
+    if not coupon.is_valid():
+        raise ValueError("Coupon is expired or has been used up.")
+
+    # Check if coupon already applied for this booking
+    existing_usage = db.query(CouponUsage).filter(
+        CouponUsage.booking_id == data.booking_id
+    ).first()
+
+    if existing_usage:
+        raise ValueError("A coupon has already been applied to this booking.")
+
+    # Calculate discount
+    if coupon.discount_type == "percentage":
+        # In real usage, we might need booking total to calculate this
+        raise ValueError("Percentage discount type requires booking total to compute.")
+    elif coupon.discount_type == "amount":
+        discount = coupon.discount_value
+    else:
+        raise ValueError("Unknown discount type.")
+
+    # Create CouponUsage entry
+    usage = CouponUsage(
+        user_id=data.user_id,
+        booking_id=data.booking_id,
+        coupon_id=coupon.id,
+        discount_applied=discount,
+    )
+
+    db.add(usage)
+    coupon.used_count += 1
+    db.commit()
+    db.refresh(usage)
+
+    return CouponInfoResponse(
+        coupon_code=coupon.code,
+        discount_applied=usage.discount_applied,
+        applied_at=usage.created_at,
+    )
+
+
+def get_coupon_by_booking(db: Session, booking_id: str):
+    usage = db.query(CouponUsage).join(Coupon).filter(
+        CouponUsage.booking_id == booking_id
+    ).first()
+
+    if not usage:
+        raise ValueError("No coupon applied to this booking.")
+
+    return CouponInfoResponse(
+        coupon_code=usage.coupon.code,
+        discount_applied=usage.discount_applied,
+        applied_at=usage.created_at
+    )
+
+def list_all_coupons(db: Session):
+    now = datetime.utcnow()
+    coupons = db.query(Coupon).filter(
+        Coupon.is_active == True,
+        Coupon.expiry_date > now
+    ).all()
+    return coupons
+
+def get_active_offers_by_user_and_service(db: Session, user_id: str, service_id: str) -> List[OfferService]:
+    now = datetime.utcnow()
+    return db.query(OfferService).filter(
+        OfferService.user_id == user_id,
+        OfferService.service_id == service_id,
+        OfferService.status == "active",
+        OfferService.start_date <= now,
+        OfferService.end_date >= now
+    ).all()

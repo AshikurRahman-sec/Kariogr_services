@@ -134,3 +134,52 @@ class PaymentResponse(BaseModel):
     status: str
     transaction_id: Optional[str]
     created_at: datetime
+
+class ApplyCouponRequest(BaseModel):
+    booking_id: str
+    user_id: str
+    coupon_code: str
+
+class CouponInfoResponse(BaseModel):
+    coupon_code: str
+    discount_applied: Decimal
+    applied_at: datetime
+
+class MessageResponse(BaseModel):
+    message: str
+
+class CouponType(str, Enum):
+    percentage = "percentage"
+    amount = "amount"
+
+class CouponResponse(BaseModel):
+    id: str
+    code: str
+    discount_type: CouponType
+    discount_value: Decimal
+    max_usage: int
+    used_count: int
+    expiry_date: datetime
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class OfferResponse(BaseModel):
+    offer_id: str
+    user_id: str
+    service_id: str
+    image_url: Optional[str]
+    status: str
+    title: Optional[str]
+    description: Optional[str]
+    discount_type: Optional[CouponType]
+    discount_value: Optional[Decimal]
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True

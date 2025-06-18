@@ -186,3 +186,71 @@ class ConfirmBookingGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: ConfirmBookingResponseBody
+
+class ApplyCouponBody(BaseModel):
+    booking_id: str
+    coupon_code: str
+
+class CouponType(str, Enum):
+    percentage = "percentage"
+    amount = "amount"
+
+class ApplyCouponGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: ApplyCouponBody
+
+class CouponInfoBody(BaseModel):
+    coupon_code: str
+    discount_applied: float
+    applied_at: datetime
+
+class CouponInfoGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: CouponInfoBody
+
+class CouponListItem(BaseModel):
+    id: str
+    code: str
+    discount_type: CouponType
+    discount_value: float
+    max_usage: int
+    used_count: int
+    expiry_date: datetime
+    is_active: bool
+    created_at: datetime
+
+class CouponListGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: list[CouponListItem]
+
+class OfferRequestBody(BaseModel):
+    service_id: str
+    user_id: str
+
+class OfferGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: OfferRequestBody
+
+class OfferItem(BaseModel):
+    offer_id: str
+    user_id: str
+    service_id: str
+    image_url: Optional[str]
+    status: str
+    title: Optional[str]
+    description: Optional[str]
+    discount_type: Optional[CouponType]
+    discount_value: Optional[float]
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+class OfferListGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: OfferItem

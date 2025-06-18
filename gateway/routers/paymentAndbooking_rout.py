@@ -460,3 +460,179 @@ async def confirm_order_gateway(
             code="500",
             request_id=request_data.header.requestId,
         )
+
+@router.post("/apply-cupon", response_model=_schemas.CouponInfoGatewayResponse)
+async def apply_coupon_gateway(
+    request_data: _schemas.ApplyCouponGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        response = requests.post(
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/apply-cupon",
+            json={
+                "booking_id": request_data.body.booking_id,
+                "user_id": user["user_id"],
+                "coupon_code": request_data.body.coupon_code,
+            },
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                message="Coupon applied successfully",
+                code="200",
+                request_id=request_data.header.requestId,
+            )
+        else:
+            return build_response(
+                data={},
+                message=response.json().get("detail", "Failed to apply coupon"),
+                code=str(response.status_code),
+                request_id=request_data.header.requestId,
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Coupon microservice is unavailable")
+        return build_response(
+            data={},
+            message="Coupon microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message="Unexpected error",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+
+@router.post("/booking-cupon", response_model=_schemas.CouponInfoGatewayResponse)
+async def get_coupon_by_booking_gateway(
+    request_data: _schemas.BookingRequestBody,
+    user: dict = Depends(verify_token),
+):
+    try:
+        booking_id = request_data.body.booking_id
+
+        response = requests.get(
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/booking-cupon/{booking_id}"
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                message="Coupon info retrieved successfully",
+                code="200",
+                request_id=request_data.header.requestId,
+            )
+        else:
+            return build_response(
+                data={},
+                message=response.json().get("detail", "No coupon found for this booking"),
+                code=str(response.status_code),
+                request_id=request_data.header.requestId,
+            )
+    except requests.exceptions.ConnectionError:
+        logging.error("Coupon microservice is unavailable")
+        return build_response(
+            data={},
+            message="Coupon microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message="Unexpected error",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+
+@router.post("/cupons-list", response_model=_schemas.CouponListGatewayResponse)
+async def list_all_coupons_gateway(
+    request_data: _schemas.BookingRequestBody,  # dummy body just to get `header`
+    user: dict = Depends(verify_token),
+):
+    try:
+        response = requests.get(f"{PAYMENT_AND_BOOKING_BASE_URL}/api/all-coupons")
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                message="Coupon list retrieved successfully",
+                code="200",
+                request_id=request_data.header.requestId,
+            )
+        else:
+            return build_response(
+                data={},
+                message="Failed to fetch coupons",
+                code=str(response.status_code),
+                request_id=request_data.header.requestId,
+            )
+    except requests.exceptions.ConnectionError:
+        logging.error("Coupon microservice is unavailable")
+        return build_response(
+            data={},
+            message="Coupon microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message="Unexpected error",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+    
+@router.post("/service-user", response_model= _schemas.OfferListGatewayResponse)
+async def get_offers_by_service_user_gateway(
+    request_data: _schemas.OfferGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    try:
+        service_id = request_data.body.service_id
+        user_id = request_data.body.user_id
+
+        response = requests.get(
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/service/{service_id}/user/{user_id}"
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                message="Offer(s) retrieved successfully",
+                code="200",
+                request_id=request_data.header.requestId,
+            )
+        else:
+            return build_response(
+                data={},
+                message=response.json().get("detail", "No active offers found"),
+                code=str(response.status_code),
+                request_id=request_data.header.requestId,
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Offer microservice is unavailable")
+        return build_response(
+            data={},
+            message="Offer microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message="Unexpected error",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
