@@ -359,7 +359,7 @@ def list_all_coupons(db: Session):
     ).all()
     return coupons
 
-def get_active_offers_by_user_and_service(db: Session, user_id: str, service_id: str) -> List[OfferService]:
+def get_active_offers_by_user_and_service(db: Session, user_id: str, service_id: str):
     now = datetime.utcnow()
     return db.query(OfferService).filter(
         OfferService.user_id == user_id,
