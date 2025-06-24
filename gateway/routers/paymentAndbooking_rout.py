@@ -556,7 +556,7 @@ async def get_coupon_by_booking_gateway(
 @router.post("/cupons-list", response_model=_schemas.CouponListGatewayResponse)
 async def list_all_coupons_gateway(
     request_data: _schemas.RequestHeader,  # dummy body just to get `header`
-    #user: dict = Depends(verify_token),
+    user: dict = Depends(verify_token),
 ):
     try:
         response = requests.get(f"{PAYMENT_AND_BOOKING_BASE_URL}/api/cupon/all-cupons")
