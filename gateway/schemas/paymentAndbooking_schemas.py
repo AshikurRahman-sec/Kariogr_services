@@ -64,6 +64,7 @@ class WorkerInfo(BaseModel):
     charge_amount: float
     discount: float
     charge_unit: ChargeUnit
+    tools_required: Optional[bool] = False
 
 class WorkerSelection(BaseModel):
     booking_id: str
