@@ -52,15 +52,14 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot add workers to this booking")
 
     for worker in worker_selection.workers:
-        # worker_service = kafka_payment_booking_service.get_worker_details('user_request', worker.worker_id, worker.skill_id)
+        # worker_service = kafka_payment_booking_service.get_worker_details('microservice_request', worker.worker_id, worker.skill_id)
         # worker_service = db.query(WorkerService).filter(WorkerService.worker_id == worker_id).first()
         # if not worker_service:
         #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Worker {worker_id} service details not found")
 
         booking_worker = BookingWorker(
             booking_id=booking.booking_id,
-            worker_id=worker.worker_id,
-            tools_required=worker.tools_required
+            worker_id=worker.worker_id    
         )
         db.add(booking_worker)
         db.commit()
@@ -71,7 +70,8 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
             booking_worker_id=booking_worker.id,
             skill_id=worker.skill_id,
             charge_amount=worker.charge_amount,
-            charge_unit=worker.charge_unit
+            charge_unit=worker.charge_unit,
+            tools_required=worker.tools_required
         )
         db.add(worker_skill)
 
@@ -87,7 +87,8 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
                     addon_service_id=worker.skill_id,
                     quantity=1,  # Default quantity
                     charge_amount=worker.charge_amount,
-                    charge_unit = worker.charge_unit
+                    charge_unit = worker.charge_unit,
+                    tools_required = worker.tools_required
                 )
                 db.add(worker_addon)
 
@@ -102,8 +103,13 @@ async def get_booking_summary(db: Session, booking_id: str):
     booking = db.query(Booking).filter(Booking.booking_id == booking_id).first()
     if not booking:
         return {"error": "Booking not found"}
-
-    user_details = await kafka_payment_booking_service.get_user_details('user_request', booking.user_id)
+    
+    user_details = await kafka_payment_booking_service.get_user_details('microservice_request', booking.user_id)
+    user_name = None
+    if user_details['user_data']['user_profile']:
+        user_name = user_details['user_data']['user_profile']['first_name']+user_details['user_data']['user_profile']['last_name'] 
+    user_email = user_details['user_data']['user_auth_info']['user_data']['email'] 
+    user_mobile = user_details['user_data']['user_auth_info']['user_data']['phone']
 
     workers = db.query(BookingWorker).filter(BookingWorker.booking_id == booking_id).all()
     workers_list = []
@@ -112,7 +118,7 @@ async def get_booking_summary(db: Session, booking_id: str):
         skills = db.query(BookingWorkerSkill).filter(BookingWorkerSkill.booking_worker_id == worker.id).all()
         addons = db.query(WorkerAddonService).filter(WorkerAddonService.booking_worker_id == worker.id).all()
 
-        worker_details = await kafka_payment_booking_service.get_worker_details('user_request', worker.worker_id)
+        worker_details = await kafka_payment_booking_service.get_worker_details('microservice_request', worker.worker_id)
 
         skills_list = []
         total_charge = 0
@@ -133,7 +139,7 @@ async def get_booking_summary(db: Session, booking_id: str):
         addons_list = []
         for addon in addons:
             service_details = await kafka_payment_booking_service.get_service_details('service_request', addon.addon_service_id)
-            worker_details = await kafka_payment_booking_service.get_worker_details('user_request', addon.booking_worker_id)
+            worker_details = await kafka_payment_booking_service.get_worker_details('microservice_request', addon.booking_worker_id)
             total_charge = total_charge+addon.charge_amount
             addons_list.append(
                 {
@@ -157,7 +163,9 @@ async def get_booking_summary(db: Session, booking_id: str):
     return {
         "booking_id": booking.booking_id,
         "user_id": booking.user_id,
-        "user_name": f"{user_details['user_data']['user_profile']['first_name']} {user_details['user_data']['user_profile']['last_name']}",
+        "user_name": user_name,
+        "email": user_email,
+        "phone": user_mobile,
         "service_id": booking.service_id,
         "booking_time": booking.get_times(),  # assuming this returns a list
         "workers": workers_list,

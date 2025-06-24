@@ -96,7 +96,7 @@ async def view_bag(user_id: str = None, unregistered_address_id: str = None, db:
             detail=str(e)
         )
     
-@router.post("/apply-cupon", response_model=_schemas.CouponInfoResponse)
+@router.post("/cupon/apply-cupon", response_model=_schemas.CouponInfoResponse, tags=["cupon&offer"])
 def apply_coupon_route(data: _schemas.ApplyCouponRequest, db: Session = Depends(get_db)):
     try:
         return _service.apply_coupon(db, data)
@@ -106,7 +106,7 @@ def apply_coupon_route(data: _schemas.ApplyCouponRequest, db: Session = Depends(
         # Log the error in real apps
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
-@router.get("/booking-cupon/{booking_id}", response_model=_schemas.CouponInfoResponse)
+@router.get("/booking-cupon/{booking_id}", response_model=_schemas.CouponInfoResponse, tags=["cupon&offer"])
 def get_coupon_for_booking(booking_id: str, db: Session = Depends(get_db)):
     try:
         return _service.get_coupon_by_booking(db, booking_id)
@@ -115,14 +115,15 @@ def get_coupon_for_booking(booking_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
-@router.get("/all-cupons", response_model=list[_schemas.CouponResponse])
+@router.get("/cupon/all-cupons", response_model=list[_schemas.CouponResponse], tags=["cupon&offer"])
 def get_all_coupons(db: Session = Depends(get_db)):
     try:
+        print("ashik")
         return _service.list_all_coupons(db)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
     
-@router.get("/service/{service_id}/user/{user_id}", response_model= _schemas.OfferResponse)
+@router.get("/service/{service_id}/user/{user_id}", response_model= _schemas.OfferResponse, tags=["cupon&offer"])
 def get_offers_for_service_and_user(service_id: str, user_id: str, db: Session = Depends(get_db)):
     try:
         offers = _service.get_active_offers_by_user_and_service(db, user_id, service_id)

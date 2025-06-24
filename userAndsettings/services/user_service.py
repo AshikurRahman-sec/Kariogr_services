@@ -198,11 +198,10 @@ async def get_user_profile_by_user_id(user_id: str, db: _orm.Session):
         .filter(_model.UserProfile.user_id == user_id)
         .first()
     )
-    #user_auth_info = await kafka_user_settings_service.get_user_auth_info('auth_info', user_id)
-
+    user_auth_info = await kafka_user_settings_service.get_user_auth_info('auth_info', user_id)
     return {
             "user_profile": jsonable_encoder(user_profile),
-            #"user_auth_info": jsonable_encoder(user_auth_info)
+            "user_auth_info": jsonable_encoder(user_auth_info)
         }
 
 async def get_worker_details_by_worker_id(worker_id: str, db: _orm.Session):

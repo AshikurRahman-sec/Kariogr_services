@@ -468,7 +468,7 @@ async def apply_coupon_gateway(
 ):
     try:
         response = requests.post(
-            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/apply-cupon",
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/cupon/apply-cupon",
             json={
                 "booking_id": request_data.body.booking_id,
                 "user_id": user["user_id"],
@@ -555,18 +555,18 @@ async def get_coupon_by_booking_gateway(
 
 @router.post("/cupons-list", response_model=_schemas.CouponListGatewayResponse)
 async def list_all_coupons_gateway(
-    request_data: _schemas.BookingRequestBody,  # dummy body just to get `header`
-    user: dict = Depends(verify_token),
+    request_data: _schemas.RequestHeader,  # dummy body just to get `header`
+    #user: dict = Depends(verify_token),
 ):
     try:
-        response = requests.get(f"{PAYMENT_AND_BOOKING_BASE_URL}/api/all-coupons")
+        response = requests.get(f"{PAYMENT_AND_BOOKING_BASE_URL}/api/cupon/all-cupons")
 
         if response.status_code == 200:
             return build_response(
                 data=response.json(),
                 message="Coupon list retrieved successfully",
                 code="200",
-                request_id=request_data.header.requestId,
+                request_id=request_data.requestId,
             )
         else:
             return build_response(

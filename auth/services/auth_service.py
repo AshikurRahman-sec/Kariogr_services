@@ -7,6 +7,7 @@ import random, os
 from firebase_admin import auth as firebase_auth
 from dotenv import load_dotenv
 import logging
+from fastapi.encoders import jsonable_encoder
 
 from schemas.oauth_schemas import UserCreate, GenerateOtp, VerifyOtp
 from schemas import auth_schemas as _schemas
@@ -212,4 +213,4 @@ async def firebase_login(db: _orm.Session, id_token: str):
 
 async def get_user(db: _orm.Session, user_id:str):
     db_user = db.query(_model.UserAuth).filter(_model.UserAuth.user_id == user_id).first()
-    return db_user
+    return jsonable_encoder(db_user)
