@@ -172,7 +172,7 @@ async def select_workers_gateway(
 )
 async def booking_summary_gateway(
     request_data: _schemas.BookingRequestBody,
-    user: dict = Depends(verify_token),
+    #user: dict = Depends(verify_token),
 ):
     """
     Gateway API that forwards the `booking_summary` request 

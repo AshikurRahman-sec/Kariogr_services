@@ -207,7 +207,7 @@ async def get_user_profile_by_user_id(user_id: str, db: _orm.Session):
 async def get_worker_details_by_worker_id(worker_id: str, db: _orm.Session):
     worker = (
     db.query(_model.WorkerProfile, _model.UserProfile)
-    .join(_model.UserProfile, _model.UserProfile.profile_id == _model.WorkerProfile.user_id)
+    .join(_model.UserProfile, _model.UserProfile.profile_id == _model.WorkerProfile.worker_id)
     .filter(_model.WorkerProfile.worker_id == worker_id)
     .first()
 )   

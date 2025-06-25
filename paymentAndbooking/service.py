@@ -139,7 +139,7 @@ async def get_booking_summary(db: Session, booking_id: str):
         addons_list = []
         for addon in addons:
             service_details = await kafka_payment_booking_service.get_service_details('service_request', addon.addon_service_id)
-            worker_details = await kafka_payment_booking_service.get_worker_details('microservice_request', addon.booking_worker_id)
+            worker_details = await kafka_payment_booking_service.get_worker_details('microservice_request', addon.booking_worker.worker_id)
             total_charge = total_charge+addon.charge_amount
             addons_list.append(
                 {
@@ -169,7 +169,7 @@ async def get_booking_summary(db: Session, booking_id: str):
         "service_id": booking.service_id,
         "booking_time": booking.get_times(),  # assuming this returns a list
         "workers": workers_list,
-        "total_charge": booking.total_charge
+        "total_charge": total_charge
     }
 
 async def add_to_bag(db: Session, data: AddToBagRequest) -> AddToBag:
