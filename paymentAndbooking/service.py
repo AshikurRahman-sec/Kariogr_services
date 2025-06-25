@@ -76,7 +76,7 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
         db.add(worker_skill)
 
         # Adding add-ons if provided
-        if worker in worker_selection.addons:
+        for worker in worker_selection.addons:
             #for addon_id in worker_selection.addonsworker_id]:
                 # addon_service = db.query(AddonService).filter(AddonService.id == addon_id).first()
                 # if not addon_service:
