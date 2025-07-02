@@ -162,6 +162,7 @@ async def get_booking_summary(db: Session, booking_id: str):
 
     return {
         "booking_id": booking.booking_id,
+        "booing_date": booking.created_at,
         "user_id": booking.user_id,
         "user_name": user_name,
         "email": user_email,

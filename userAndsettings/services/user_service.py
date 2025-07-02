@@ -44,6 +44,7 @@ async def get_worker_zones_by_skill(db: _orm.Session, service_id: str):
         .join(_model.WorkerProfile, _model.WorkerZone.worker_id == _model.WorkerProfile.worker_id)
         .join(_model.WorkerSkill, _model.WorkerProfile.worker_id == _model.WorkerSkill.worker_id)
         .filter(_model.WorkerSkill.skill_id == service_id)
+        .distinct(_model.WorkerZone.division)
         .all()
     )
     return worker_zones

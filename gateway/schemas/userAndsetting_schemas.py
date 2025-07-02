@@ -88,6 +88,9 @@ class SkillOut(BaseModel):
     skill_name: str
     category: Optional[str]
     description: Optional[str]
+    service_charge: float
+    charge_unit: str
+    discount: float
 
     class Config:
         orm_mode = True

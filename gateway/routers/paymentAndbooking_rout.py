@@ -364,7 +364,7 @@ async def get_bag_list_gateway(
 
 @router.post(
     "/make-payment",
-    #response_model=_schemas.MakePaymentGatewayResponse,
+    response_model=_schemas.MakePaymentGatewayResponse,
     #tags=["Payment"]
 )
 async def make_payment_gateway(
