@@ -1,7 +1,7 @@
 import uuid
 import json
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint, Numeric, func
+    Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint, Numeric, func, ARRAY
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -146,7 +146,9 @@ class ServiceToolRequirement(database.Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     service_id = Column(String, ForeignKey('karigor.services.id', ondelete="CASCADE"), nullable=False, index=True)
-    needs_tools = Column(Boolean, nullable=False, default=False)  # True if tools are required
+    
+    # New column to store list of tools
+    tools = Column(ARRAY(String), nullable=True)
     
    
    

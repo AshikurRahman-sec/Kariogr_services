@@ -55,6 +55,8 @@ class ServiceHierarchyOut(BaseModel):
     services: List[SecondLevelServiceOut]
 
 class ServiceToolRequirementResponse(BaseModel):
-    service_id: str
-    needs_tools: bool
+    tools: Optional[List[str]] = None  # List of tools; can be null
+
+    class Config:
+        orm_mode = True
     

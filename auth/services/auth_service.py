@@ -63,6 +63,8 @@ async def send_otp_mail(user: GenerateOtp, db: _orm.Session):
     return "OTP sent to your email"
 
 async def request_password_reset(email: str, db: _orm.Session):
+    from kafka_producer_consumer import kafka_auth_service
+
     user = db.query(_model.UserAuth).filter(_model.UserAuth.email == email).first()
     
     if not user:
@@ -96,8 +98,7 @@ async def request_password_reset(email: str, db: _orm.Session):
     Your Application Team
     """
     }
-    
-    await kafka_producer_service.send_message("password_reset", message)
+    await kafka_auth_service.send_message("password_reset", message)
 
 async def reset_password(otp: str, new_password: str, db: _orm.Session):
     user = db.query(_model.UserAuth).filter(_model.UserAuth.reset_otp == otp, _model.UserAuth.reset_otp_expiry > datetime.utcnow()).first()
