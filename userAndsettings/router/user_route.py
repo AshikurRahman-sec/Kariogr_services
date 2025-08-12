@@ -49,7 +49,7 @@ async def get_worker_zones_by_skill(service_id: str, db: Session = Depends(get_d
         logging.error(f"Error retrieving worker zones for skill {service_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching worker zones")
 
-@router.post("/workers/filter", response_model=_schemas.SearchWorkerDetails)
+@router.post("/workers/filter")
 async def get_workers_by_skill_and_district(
     request: _schemas.WorkerFilterRequest,
     size: int = Query(10, ge=1),  # Default 10, minimum 1
@@ -59,13 +59,22 @@ async def get_workers_by_skill_and_district(
     """
     Get workers based on skill and district with pagination using query parameters.
     """
+    await _service.get_workers_by_skill_and_district(
+            db,
+            request.skill_id, 
+            request.district,
+            size,
+            page,
+            "string"
+        )
     try:
         response = await _service.get_workers_by_skill_and_district(
             db,
             request.skill_id, 
             request.district,
             size,
-            page
+            page,
+            "string"
         )
         
         if not response["data"]:
@@ -178,3 +187,25 @@ def react_to_comment(
         return _service.create_reaction(db, reaction_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/worker/bookmark", response_model=_schemas.WorkerBookmarkOut)
+async def create_worker_bookmark(bookmark_data: _schemas.WorkerBookmarkCreate, db: Session = Depends(get_db)):
+    try:
+        return _service.add_worker_bookmark(db, bookmark_data)
+    except Exception:
+        raise HTTPException(status_code=500, detail="An error occurred while bookmarking worker")
+    
+@router.delete("/worker/bookmark")
+async def delete_worker_bookmark(user_id: str, worker_id: str, db: Session = Depends(get_db)):
+    try:
+        return _service.remove_worker_bookmark(db, user_id, worker_id)
+    except Exception:
+        raise HTTPException(status_code=500, detail="An error occurred while removing bookmark")
+
+
+@router.get("/worker/bookmarks", response_model=List[_schemas.WorkerBookmarkOut])
+async def get_worker_bookmarks(user_id: str, db: Session = Depends(get_db)):
+    try:
+        return _service.list_worker_bookmarks(db, user_id)
+    except Exception:
+        raise HTTPException(status_code=500, detail="An error occurred while fetching bookmarks")

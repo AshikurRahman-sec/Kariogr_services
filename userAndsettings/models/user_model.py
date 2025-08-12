@@ -21,6 +21,12 @@ class UserProfile(database.Base):
 
     address = relationship("Address", back_populates="user", uselist=False, cascade="all, delete-orphan")
     worker_profile = relationship("WorkerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    bookmarked_workers = relationship(
+        "WorkerBookmark",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
 
 # Address Table
 class Address(database.Base):
@@ -59,6 +65,8 @@ class WorkerProfile(database.Base):
     certifications = relationship("WorkerCertification", back_populates="worker", cascade="all, delete-orphan")
     working_zones = relationship("WorkerZone", back_populates="worker", cascade="all, delete-orphan") 
     skill_zones = relationship("WorkerSkillZone", back_populates="worker", cascade="all, delete-orphan")
+    bookmarked_by_users = relationship("WorkerBookmark",back_populates="worker",cascade="all, delete-orphan")
+
 
 # Skill Table
 class Skill(database.Base):
@@ -108,11 +116,12 @@ class UnregisteredUserAddress(database.Base):
     __table_args__ = {"schema": "karigor"}
 
     address_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    mobile_id = Column(String(255), nullable=False, index=True, comment="Unique mobile device identifier")
+    mobile_id = Column(String(255), nullable=False)
+    user_id = Column(String(36))
     street_address = Column(String(255))
-    division = Column(String(100), index=True)
-    district = Column(String(100), index=True)
-    thana = Column(String(100), index=True)
+    division = Column(String(100))
+    district = Column(String(100))
+    thana = Column(String(100))
     latitude = Column(Numeric(9, 6))
     longitude = Column(Numeric(9, 6))
     created_at = Column(TIMESTAMP, server_default=func.now())
@@ -226,4 +235,20 @@ class WorkerSkillRating(database.Base):
     skill = relationship("Skill")
     user = relationship("UserProfile")
 
+class WorkerBookmark(database.Base):
+    __tablename__ = 'worker_bookmarks'
+    __table_args__ = (
+        UniqueConstraint('user_id', 'worker_id', name='unique_worker_bookmark'),
+        {"schema": "karigor"}
+    )
+
+    bookmark_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey('karigor.user_profiles.profile_id', ondelete="CASCADE"), index=True)
+    worker_id = Column(String(36), ForeignKey('karigor.worker_profiles.worker_id', ondelete="CASCADE"), index=True)
+    
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    # Relationships
+    user = relationship("UserProfile", back_populates="bookmarked_workers")
+    worker = relationship("WorkerProfile", back_populates="bookmarked_by_users")
 

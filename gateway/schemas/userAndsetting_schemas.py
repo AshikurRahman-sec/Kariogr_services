@@ -282,7 +282,23 @@ class CommentReactionGatewayResponse(BaseModel):
     meta: dict = {}
     body: ReactionResponse  # from your existing service schemas
 
-
-
 CommentGatewayResponseBody.update_forward_refs()
+
+class WorkerBookmarkCreate(BaseModel):
+    user_id: str
+    worker_id: str
+
+class WorkerBookmarkRequestBody(BaseModel):
+    meta: dict = {}
+    header: RequestHeader
+    body: WorkerBookmarkCreate
+
+class WorkerBookmarkOut(WorkerBookmarkCreate):
+    bookmark_id: str
+    created_at: datetime
+
+class WorkerBookmarkResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: List[WorkerBookmarkOut]
 

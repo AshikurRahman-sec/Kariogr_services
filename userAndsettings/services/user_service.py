@@ -1,6 +1,7 @@
 import sqlalchemy.orm as _orm
 from sqlalchemy import select, func
 from uuid import UUID
+from fastapi import HTTPException
 
 from schemas import user_schemas as _schemas
 from models import user_model as _model
@@ -24,19 +25,34 @@ def update_worker_profile(db: _orm.Session, user_id: str, profile_data: _schemas
     return db_worker
 
 async def create_address(db: _orm.Session, address: _schemas.UnregisteredUserAddressCreate):
-    db_address = _model.UnregisteredUserAddress(
-        mobile_id=address.mobile_id,
-        street_address=address.street_address,
-        division=address.division,
-        district=address.district,
-        thana=address.thana,
-        latitude=address.latitude,
-        longitude=address.longitude
-    )
-    db.add(db_address)
+    # Check if the address already exists by mobile_id
+    existing_address = db.query(_model.UnregisteredUserAddress).filter_by(mobile_id=address.mobile_id).first()
+
+    if existing_address:
+        # Update existing record
+        existing_address.street_address = address.street_address
+        existing_address.division = address.division
+        existing_address.district = address.district
+        existing_address.thana = address.thana
+        existing_address.latitude = address.latitude
+        existing_address.longitude = address.longitude
+    else:
+        # Create new address
+        existing_address = _model.UnregisteredUserAddress(
+            mobile_id=address.mobile_id,
+            street_address=address.street_address,
+            division=address.division,
+            district=address.district,
+            thana=address.thana,
+            latitude=address.latitude,
+            longitude=address.longitude
+        )
+        db.add(existing_address)
+
     db.commit()
-    db.refresh(db_address)
-    return db_address
+    db.refresh(existing_address)
+    return existing_address
+
 
 async def get_worker_zones_by_skill(db: _orm.Session, service_id: str):
     worker_zones = (
@@ -49,7 +65,7 @@ async def get_worker_zones_by_skill(db: _orm.Session, service_id: str):
     )
     return worker_zones
 
-async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, district: str, size: int, page: int):
+async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, district: str, size: int, page: int, current_user_id: str):
     """
     Retrieve workers who have a specific skill and operate in specific districts with pagination,
     including average worker skill ratings.
@@ -66,12 +82,17 @@ async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, dis
     )
 
     query = (
-        db.query(_model.WorkerSkillZone, subquery.c.average_rating, subquery.c.rating_count)
+        db.query(_model.WorkerSkillZone, subquery.c.average_rating, subquery.c.rating_count, _model.WorkerBookmark.bookmark_id)
         .join(_model.WorkerZone, _model.WorkerSkillZone.worker_zone_id == _model.WorkerZone.worker_zone_id)
         .outerjoin(
             subquery,
             (_model.WorkerSkillZone.worker_id == subquery.c.worker_id) &
             (_model.WorkerSkillZone.skill_id == subquery.c.skill_id)
+        )
+        .outerjoin(
+            _model.WorkerBookmark,
+            (_model.WorkerBookmark.worker_id == _model.WorkerSkillZone.worker_id) &
+            (_model.WorkerBookmark.user_id == current_user_id)
         )
         .filter(
             _model.WorkerSkillZone.skill_id == skill_id,
@@ -115,9 +136,10 @@ async def get_workers_by_skill_and_district(db: _orm.Session, skill_id: str, dis
             "rating": {
                 "average": float(avg_rating) if avg_rating is not None else None,
                 "count": int(rating_count) if rating_count is not None else 0
-            }
+            },
+            "bookmarked": bool(bookmark_id)
         }
-        for ws, avg_rating, rating_count in worker_skill_zones
+        for ws, avg_rating, rating_count, bookmark_id in worker_skill_zones
     ]
 
     return {
@@ -412,3 +434,43 @@ def create_reaction(db: _orm.Session, user_id: str, reaction_data: _schemas.Crea
     db.commit()
     db.refresh(new_reaction)
     return new_reaction
+
+def add_worker_bookmark(db: _orm.Session, bookmark_data: _schemas.WorkerBookmarkCreate):
+    # Check if already bookmarked
+    existing = db.query(_model.WorkerBookmark).filter(
+        _model.WorkerBookmark.user_id == bookmark_data.user_id,
+        _model.WorkerBookmark.worker_id == bookmark_data.worker_id
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Worker already bookmarked by this user"
+        )
+
+    new_bookmark = _model.WorkerBookmark(**bookmark_data.dict())
+    db.add(new_bookmark)
+    db.commit()
+    db.refresh(new_bookmark)
+    return new_bookmark
+
+def remove_worker_bookmark(db: _orm.Session, user_id: str, worker_id: str):
+    bookmark = db.query(_model.WorkerBookmark).filter(
+        _model.WorkerBookmark.user_id == user_id,
+        _model.WorkerBookmark.worker_id == worker_id
+    ).first()
+
+    if not bookmark:
+        raise HTTPException(
+            status_code=404,
+            detail="Bookmark not found"
+        )
+
+    db.delete(bookmark)
+    db.commit()
+    return {"detail": "Bookmark removed successfully"}
+
+def list_worker_bookmarks(db: _orm.Session, user_id: str):
+    return db.query(_model.WorkerBookmark).filter(
+        _model.WorkerBookmark.user_id == user_id
+    ).all()

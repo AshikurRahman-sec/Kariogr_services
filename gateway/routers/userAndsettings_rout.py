@@ -543,3 +543,143 @@ async def comment_reaction_gateway(
             request_id=request_data.header.requestId,
         )
 
+@router.post(
+    "/worker/bookmark",
+    response_model=Union[_schemas.WorkerBookmarkResponse, _schemas.ErrorResponse],
+)
+async def create_worker_bookmark_gateway(request_data: _schemas.WorkerBookmarkRequestBody):
+    """
+    Gateway API to forward the `add_worker_bookmark` request to the WorkerBookmark microservice.
+    """
+    try:
+        response = requests.post(
+            f"{USER_SETTINGS_BASE_URL}/api/worker/bookmark",
+            json={"user_id":request_data.body.user_id, "worker_id":request_data.body.worker_id}
+        )
+
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Worker bookmarked successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to bookmark worker"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("WorkerBookmark microservice is unavailable")
+        return build_response(
+            data={},
+            message="WorkerBookmark microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.delete(
+    "/worker/bookmark",
+    response_model=Union[dict, _schemas.ErrorResponse]
+)
+async def delete_worker_bookmark_gateway(user_id: str, worker_id: str, request_id: str):
+    """
+    Gateway API to forward the `remove_worker_bookmark` request to the WorkerBookmark microservice.
+    """
+    try:
+        response = requests.delete(
+            f"{USER_SETTINGS_BASE_URL}/api/worker/bookmark",
+            params={"user_id": user_id, "worker_id": worker_id}
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_id,
+                message="Worker bookmark removed successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_id,
+                message=response.json().get("detail", "Failed to remove bookmark"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("WorkerBookmark microservice is unavailable")
+        return build_response(
+            data={},
+            message="WorkerBookmark microservice is unavailable",
+            code="503",
+            request_id=request_id,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_id,
+        )
+
+
+@router.get(
+    "/worker/bookmarks",
+    response_model=Union[_schemas.WorkerBookmarkResponse, _schemas.ErrorResponse],
+)
+async def list_worker_bookmarks_gateway(user_id: str, request_id: str):
+    """
+    Gateway API to forward the `list_worker_bookmarks` request to the WorkerBookmark microservice.
+    """
+    try:
+        response = requests.get(
+            f"{USER_SETTINGS_BASE_URL}/api/worker/bookmarks",
+            params={"user_id": user_id}
+        )
+
+        if response.status_code == 200:
+            response_data = response.json()
+            return build_response(
+                data=response_data,
+                request_id=request_id,
+                message="Worker bookmarks retrieved successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_id,
+                message=response.json().get("detail", "Failed to fetch bookmarks"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("WorkerBookmark microservice is unavailable")
+        return build_response(
+            data={},
+            message="WorkerBookmark microservice is unavailable",
+            code="503",
+            request_id=request_id,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_id,
+        )

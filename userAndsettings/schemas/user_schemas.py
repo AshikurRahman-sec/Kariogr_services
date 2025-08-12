@@ -207,3 +207,16 @@ class ReactionResponse(BaseModel):
 
 
 CommentResponse.update_forward_refs()
+
+class WorkerBookmarkCreate(BaseModel):
+    user_id: str   # This should be the profile_id from UserProfile
+    worker_id: str
+
+class WorkerBookmarkOut(BaseModel):
+    bookmark_id: str
+    user_id: str
+    worker_id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
