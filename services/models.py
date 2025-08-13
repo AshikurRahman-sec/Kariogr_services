@@ -3,7 +3,7 @@ import json
 from sqlalchemy import (
     Column, Integer, String, Boolean, Text, ForeignKey, TIMESTAMP, Index, UniqueConstraint, Numeric, func, ARRAY
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -148,7 +148,8 @@ class ServiceToolRequirement(database.Base):
     service_id = Column(String, ForeignKey('karigor.services.id', ondelete="CASCADE"), nullable=False, index=True)
     
     # New column to store list of tools
-    tools = Column(ARRAY(String), nullable=True)
+    tools = Column(JSONB, nullable=True)
+
     
    
    

@@ -118,7 +118,6 @@ def get_coupon_for_booking(booking_id: str, db: Session = Depends(get_db)):
 @router.get("/cupon/all-cupons", response_model=list[_schemas.CouponResponse], tags=["cupon&offer"])
 def get_all_coupons(db: Session = Depends(get_db)):
     try:
-        print("ashik")
         return _service.list_all_coupons(db)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
