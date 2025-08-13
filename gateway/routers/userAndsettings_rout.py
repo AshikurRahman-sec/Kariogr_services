@@ -132,6 +132,7 @@ async def get_workers_by_skill_and_district_gateway(
             json={
                 "skill_id": request_data.body.skill_id,
                 "district": request_data.body.district,
+                "user_id": user["user_id"]
             },
             params={"limit": limit, "offset": offset},  # Pass limit & offset as query parameters
         )

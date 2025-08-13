@@ -111,6 +111,7 @@ class WorkerWithSkillsAndZonesOut(BaseModel):
     worker_profile: WorkerProfileOut
     skill_with_zone: SkillWithZoneOut
     rating: RatingOut
+    bookmarked : bool
 
     class Config:
         orm_mode = True
