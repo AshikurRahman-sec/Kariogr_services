@@ -111,6 +111,7 @@ class WorkerWithSkillsAndZonesOut(BaseModel):
     worker_profile: WorkerProfileOut
     skill_with_zone: SkillWithZoneOut
     rating: RatingOut
+    bookmarked : bool
 
     class Config:
         orm_mode = True
@@ -285,7 +286,6 @@ class CommentReactionGatewayResponse(BaseModel):
 CommentGatewayResponseBody.update_forward_refs()
 
 class WorkerBookmarkCreate(BaseModel):
-    user_id: str
     worker_id: str
 
 class WorkerBookmarkRequestBody(BaseModel):

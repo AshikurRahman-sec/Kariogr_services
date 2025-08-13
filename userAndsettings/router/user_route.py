@@ -49,7 +49,7 @@ async def get_worker_zones_by_skill(service_id: str, db: Session = Depends(get_d
         logging.error(f"Error retrieving worker zones for skill {service_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching worker zones")
 
-@router.post("/workers/filter")
+@router.post("/workers/filter", response_model=_schemas.SearchWorkerDetails)
 async def get_workers_by_skill_and_district(
     request: _schemas.WorkerFilterRequest,
     size: int = Query(10, ge=1),  # Default 10, minimum 1
@@ -59,14 +59,6 @@ async def get_workers_by_skill_and_district(
     """
     Get workers based on skill and district with pagination using query parameters.
     """
-    await _service.get_workers_by_skill_and_district(
-            db,
-            request.skill_id, 
-            request.district,
-            size,
-            page,
-            "string"
-        )
     try:
         response = await _service.get_workers_by_skill_and_district(
             db,
@@ -74,7 +66,7 @@ async def get_workers_by_skill_and_district(
             request.district,
             size,
             page,
-            "string"
+            request.user_id
         )
         
         if not response["data"]:

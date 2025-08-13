@@ -82,6 +82,7 @@ class SkillOut(BaseModel):
 class WorkerFilterRequest(BaseModel):
     skill_id: str
     district: str
+    user_id: str
 
 class SkillWithZoneOut(BaseModel):
     skill: SkillOut
@@ -99,6 +100,7 @@ class WorkerWithSkillsAndZonesOut(BaseModel):
     worker_profile: WorkerProfileOut
     skill_with_zone: SkillWithZoneOut 
     rating: RatingOut
+    bookmarked : bool
 
     class Config:
         from_attributes = True
