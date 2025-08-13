@@ -286,7 +286,6 @@ class CommentReactionGatewayResponse(BaseModel):
 CommentGatewayResponseBody.update_forward_refs()
 
 class WorkerBookmarkCreate(BaseModel):
-    user_id: str
     worker_id: str
 
 class WorkerBookmarkRequestBody(BaseModel):
