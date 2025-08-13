@@ -243,7 +243,7 @@ class WorkerBookmark(database.Base):
     )
 
     bookmark_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey('karigor.user_profiles.profile_id', ondelete="CASCADE"), index=True)
+    user_id = Column(String(36), ForeignKey('karigor.user_profiles.user_id', ondelete="CASCADE"), index=True)
     worker_id = Column(String(36), ForeignKey('karigor.worker_profiles.worker_id', ondelete="CASCADE"), index=True)
     
     created_at = Column(TIMESTAMP, server_default=func.now())
