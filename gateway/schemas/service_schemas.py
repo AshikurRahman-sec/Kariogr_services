@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from uuid import UUID
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 
 from schemas.base_schemas import RequestHeader, ResponseHeader
 
@@ -26,7 +26,7 @@ class ServiceToolRequirementGatewayRequest(BaseModel):
     body: ServiceToolRequirementRequestBody
 
 class ServiceToolRequirementOut(BaseModel):
-    tools: Optional[List[Dict[str, bool]]] = None 
+    tools: Optional[List[Dict[str, Union[bool, float]]]] = None  
 
 class ServiceToolRequirementGatewayResponse(BaseModel):
     header: ResponseHeader

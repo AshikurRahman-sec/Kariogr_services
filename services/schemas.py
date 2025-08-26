@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 
 
 class SingleServiceRequestBody(BaseModel):
@@ -55,7 +55,7 @@ class ServiceHierarchyOut(BaseModel):
     services: List[SecondLevelServiceOut]
 
 class ServiceToolRequirementResponse(BaseModel):
-    tools: Optional[List[Dict[str, bool]]] = None 
+    tools: Optional[List[Dict[str, Union[bool, float]]]] = None 
 
     class Config:
         orm_mode = True
