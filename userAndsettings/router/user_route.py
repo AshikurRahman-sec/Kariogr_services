@@ -184,13 +184,17 @@ def react_to_comment(
 async def create_worker_bookmark(bookmark_data: _schemas.WorkerBookmarkCreate, db: Session = Depends(get_db)):
     try:
         return _service.add_worker_bookmark(db, bookmark_data)
-    except Exception:
+    except HTTPException as e:
+        raise e
+    except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while bookmarking worker")
     
 @router.delete("/worker/bookmark")
 async def delete_worker_bookmark(user_id: str, worker_id: str, db: Session = Depends(get_db)):
     try:
         return _service.remove_worker_bookmark(db, user_id, worker_id)
+    except HTTPException as e:
+        raise e
     except Exception:
         raise HTTPException(status_code=500, detail="An error occurred while removing bookmark")
 

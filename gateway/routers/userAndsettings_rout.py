@@ -596,27 +596,28 @@ async def create_worker_bookmark_gateway(request_data: _schemas.WorkerBookmarkRe
     "/worker/bookmark",
     response_model=Union[dict, _schemas.ErrorResponse]
 )
-async def delete_worker_bookmark_gateway(user_id: str, worker_id: str, request_id: str):
+async def delete_worker_bookmark_gateway(request_data: _schemas.WorkerBookmarkRequestBody,
+                                         user: dict = Depends(verify_token)):
     """
     Gateway API to forward the `remove_worker_bookmark` request to the WorkerBookmark microservice.
     """
     try:
         response = requests.delete(
             f"{USER_SETTINGS_BASE_URL}/api/worker/bookmark",
-            params={"user_id": user_id, "worker_id": worker_id}
+            params={"user_id": user["user_id"], "worker_id": request_data.body.worker_id}
         )
 
         if response.status_code == 200:
             return build_response(
                 data=response.json(),
-                request_id=request_id,
+                request_id=request_data.header.requestId,
                 message="Worker bookmark removed successfully",
                 code="200",
             )
         else:
             return build_response(
                 data={},
-                request_id=request_id,
+                request_id=request_data.header.requestId,
                 message=response.json().get("detail", "Failed to remove bookmark"),
                 code=str(response.status_code),
             )
@@ -627,7 +628,7 @@ async def delete_worker_bookmark_gateway(user_id: str, worker_id: str, request_i
             data={},
             message="WorkerBookmark microservice is unavailable",
             code="503",
-            request_id=request_id,
+            request_id=request_data.header.requestId,
         )
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
@@ -635,7 +636,7 @@ async def delete_worker_bookmark_gateway(user_id: str, worker_id: str, request_i
             data={},
             message=f"An unexpected error occurred: {str(e)}",
             code="500",
-            request_id=request_id,
+            request_id=request_data.header.requestId,
         )
 
 

@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer, Enum, DateTime, Text, Numeric, ForeignKey, func, TIMESTAMP, Boolean, JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 import uuid
 from enum import Enum as pyEnum
@@ -75,7 +76,7 @@ class BookingWorkerSkill(database.Base):
     skill_id = Column(String(36), nullable=False)
     charge_amount = Column(Numeric(10, 2), nullable=False)
     charge_unit = Column(Enum('hourly', 'daily', 'per job', name='charge_unit_enum'))
-    tools_required = Column(Boolean, nullable=False, default=False)
+    tools = Column(JSONB, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
 
@@ -92,7 +93,7 @@ class WorkerAddonService(database.Base):
     quantity = Column(Integer, nullable=False, default=1)
     charge_amount = Column(Numeric(10, 2), nullable=False)
     charge_unit = Column(Enum('hourly', 'daily', 'per job', name='charge_unit_enum'))
-    tools_required = Column(Boolean, nullable=False, default=False)
+    tools = Column(JSONB, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
 

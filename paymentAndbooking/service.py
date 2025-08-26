@@ -71,7 +71,7 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
             skill_id=worker.skill_id,
             charge_amount=worker.charge_amount,
             charge_unit=worker.charge_unit,
-            tools_required=worker.tools_required
+            tools=worker.tools 
         )
         db.add(worker_skill)
 
@@ -88,7 +88,7 @@ async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection)
                     quantity=1,  # Default quantity
                     charge_amount=worker.charge_amount,
                     charge_unit = worker.charge_unit,
-                    tools_required = worker.tools_required
+                    tools = worker.tools
                 )
                 db.add(worker_addon)
 
