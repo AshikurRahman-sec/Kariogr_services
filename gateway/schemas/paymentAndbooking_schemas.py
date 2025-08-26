@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Union
 from schemas.base_schemas import RequestHeader, ResponseHeader, ErrorResponse
 from enum import Enum
 from datetime import datetime
@@ -64,7 +64,7 @@ class WorkerInfo(BaseModel):
     charge_amount: float
     discount: float
     charge_unit: ChargeUnit
-    tools_required: Optional[bool] = False
+    tools_required: Optional[List[Dict[str, Union[bool, float]]]] = None
 
 class WorkerSelection(BaseModel):
     booking_id: str

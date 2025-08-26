@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 from enum import Enum
 from datetime import datetime
 from typing import Any
@@ -76,7 +76,7 @@ class WorkerInfo(BaseModel):
     charge_amount: float
     discount:float
     charge_unit: ChargeUnit
-    tools: Optional[List[Dict[str, bool]]] = None 
+    tools: Optional[List[Dict[str, Union[bool, float]]]] = None   
 
 class WorkerSelection(BaseModel):
     booking_id: str
