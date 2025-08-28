@@ -23,7 +23,6 @@ class BookingInputOut(BookingInputBase):
     class Config:
         from_attributes = True
 
-
 class ServiceChildOut(BaseModel):
     id: str
     parent_id: Optional[str]
@@ -55,7 +54,7 @@ class ServiceHierarchyOut(BaseModel):
     services: List[SecondLevelServiceOut]
 
 class ServiceToolRequirementResponse(BaseModel):
-    tools: Optional[List[Dict[str, Union[bool, float]]]] = None 
+    tools: Optional[List[Dict[str, Union[bool, float, str]]]] = None 
 
     class Config:
         orm_mode = True

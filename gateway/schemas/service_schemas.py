@@ -26,7 +26,7 @@ class ServiceToolRequirementGatewayRequest(BaseModel):
     body: ServiceToolRequirementRequestBody
 
 class ServiceToolRequirementOut(BaseModel):
-    tools: Optional[List[Dict[str, Union[bool, float]]]] = None  
+    tools: Optional[List[Dict[str, Union[bool, float, str]]]] = None  
 
 class ServiceToolRequirementGatewayResponse(BaseModel):
     header: ResponseHeader

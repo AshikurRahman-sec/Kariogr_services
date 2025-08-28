@@ -57,7 +57,6 @@ class BookingCreateResponse(BaseModel):
     meta: dict = {}
     body: BookingResponse
 
-
 class WorkerInfo(BaseModel):
     worker_id: str
     skill_id: str
@@ -80,14 +79,6 @@ class WorkerSelectionResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: dict  # Can be adjusted based on actual response structure
-
-class BookingId(BaseModel):
-    booking_id: str
-
-class BookingRequestBody(BaseModel):
-    meta: dict = {}
-    header: RequestHeader
-    body: BookingId
 
 class AddToBagBody(BaseModel):
     service_id: str
