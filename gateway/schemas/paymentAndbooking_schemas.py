@@ -52,6 +52,11 @@ class BookingCreateRequest(BaseModel):
     header: RequestHeader
     body: BookingBase
 
+class BookingCreateResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: BookingResponse
+
 class AllBookingsGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
