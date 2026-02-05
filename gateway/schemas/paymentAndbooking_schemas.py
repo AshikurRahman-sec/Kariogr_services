@@ -52,10 +52,14 @@ class BookingCreateRequest(BaseModel):
     header: RequestHeader
     body: BookingBase
 
-class BookingCreateResponse(BaseModel):
+class AllBookingsGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
-    body: BookingResponse
+    body: List[BookingResponse]
+
+class BookingListGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
 
 class WorkerInfo(BaseModel):
     worker_id: str

@@ -42,6 +42,13 @@ async def get_booking(db: Session, booking_id: str) -> BookingResponse:
         raise ValueError(f"Booking with id {booking_id} not found.")
     return BookingResponse.from_orm(booking)  
 
+async def get_all_bookings(db: Session) -> List[BookingResponse]:
+    """
+    Retrieve all bookings from the database.
+    """
+    result = db.execute(select(Booking))
+    bookings = result.scalars().all()
+    return [BookingResponse.from_orm(booking) for booking in bookings]
 
 async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection):
     booking = db.query(Booking).filter(Booking.booking_id == worker_selection.booking_id).first()
