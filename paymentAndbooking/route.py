@@ -33,20 +33,20 @@ async def select_workers_for_booking(worker_selection: _schemas.WorkerSelection,
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/{booking_id}", response_model=_schemas.BookingResponse, tags=["Bookings"])
-async def get_booking_handler(booking_id: str, db: Session = Depends(get_db)):
+@router.get("/bookings", response_model=list[_schemas.BookingResponse], tags=["Bookings"])
+async def get_all_bookings_handler(db: Session = Depends(get_db)):
     try:
-        return await _service.get_booking(db, booking_id)
+        return await _service.get_all_bookings(db)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    
-@router.get("/bookings", response_model=list[_schemas.BookingResponse], tags=["Bookings"])
-async def get_all_bookings_handler(db: Session = Depends(get_db)):
+
+@router.get("/{booking_id}", response_model=_schemas.BookingResponse, tags=["Bookings"])
+async def get_booking_handler(booking_id: str, db: Session = Depends(get_db)):
     try:
-        return await _service.get_all_bookings(db)
+        return await _service.get_booking(db, booking_id)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

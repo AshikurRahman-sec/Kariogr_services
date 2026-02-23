@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from fastapi import HTTPException, status
 from decimal import Decimal
 from datetime import datetime
+from typing import List
 import uuid
 import json
 
@@ -36,7 +37,7 @@ async def get_booking(db: Session, booking_id: str) -> BookingResponse:
     """
     Retrieve a booking by its ID.
     """
-    result = db.execute(select(Booking).where(Booking.id == booking_id))
+    result = db.execute(select(Booking).where(Booking.booking_id == booking_id))
     booking = result.scalars().first()
     if not booking:
         raise ValueError(f"Booking with id {booking_id} not found.")
