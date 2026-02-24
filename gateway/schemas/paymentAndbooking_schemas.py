@@ -44,6 +44,8 @@ class BookingResponse(BookingBase):
     booking_id: str
     user_id: str
     status: BookingStatus
+    service_name: Optional[str] = None
+    user_name: Optional[str] = None
     created_at: str
     updated_at: Optional[str]
 
@@ -62,9 +64,14 @@ class AllBookingsGatewayResponse(BaseModel):
     meta: dict = {}
     body: List[BookingResponse]
 
+class BookingListBody(BaseModel):
+    skip: int = 0
+    limit: int = 10
+
 class BookingListGatewayRequest(BaseModel):
     header: RequestHeader
     meta: dict = {}
+    body: BookingListBody
 
 class WorkerInfo(BaseModel):
     worker_id: str

@@ -3,7 +3,6 @@ import json
 import uuid
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from database import get_db
-from service import get_cart_data
 
 class PaymentBookingService:
     def __init__(self, brokers: str, response_topics: list):
@@ -19,6 +18,7 @@ class PaymentBookingService:
         asyncio.create_task(self.process_requests())
 
     async def process_requests(self):
+        from service import get_cart_data
         async for msg in self.consumer:
             request = json.loads(msg.value.decode("utf-8"))
             request_id = request.get("request_id")

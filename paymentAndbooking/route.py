@@ -34,9 +34,9 @@ async def select_workers_for_booking(worker_selection: _schemas.WorkerSelection,
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.get("/bookings", response_model=list[_schemas.BookingResponse], tags=["Bookings"])
-async def get_all_bookings_handler(db: Session = Depends(get_db)):
+async def get_all_bookings_handler(skip: int = Query(0, ge=0), limit: int = Query(10, ge=1), db: Session = Depends(get_db)):
     try:
-        return await _service.get_all_bookings(db)
+        return await _service.get_all_bookings(db, skip=skip, limit=limit)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

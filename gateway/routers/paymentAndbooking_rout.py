@@ -76,8 +76,13 @@ async def get_all_bookings_gateway(
     Gateway API that forwards the `get_all_bookings` request to the Booking microservice.
     """
     try:
+        params = {
+            "skip": request_data.body.skip,
+            "limit": request_data.body.limit
+        }
         response = requests.get(
-            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/bookings"
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/bookings",
+            params=params
         )
 
         if response.status_code == 200:

@@ -212,6 +212,7 @@ async def get_workers_by_zone(db: _orm.Session, worker_id: str, district: str, s
 
 async def get_user_profile_by_user_id(user_id: str, db: _orm.Session):
     from kafka_producer_consumer import kafka_user_settings_service
+
     user_profile = (
         db.query(_model.UserProfile)
         .options(

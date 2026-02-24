@@ -42,6 +42,8 @@ class BookingResponse(BookingBase):
     booking_id: str
     user_id: str
     status: BookingStatus
+    service_name: Optional[str] = None
+    user_name: Optional[str] = None
     created_at: str
     updated_at: Optional[str]
 
@@ -49,7 +51,7 @@ class BookingResponse(BookingBase):
         from_attributes = True 
 
     @classmethod
-    def from_orm(cls, obj):
+    def from_orm(cls, obj, service_name=None, user_name=None):
         """
         Custom method to transform an ORM object into a BookingResponse instance.
         """
@@ -66,6 +68,11 @@ class BookingResponse(BookingBase):
             obj_dict["dates"] = json.loads(obj_dict["dates"])
         if isinstance(obj_dict.get("times"), str):
             obj_dict["times"] = json.loads(obj_dict["times"])
+
+        if service_name:
+            obj_dict["service_name"] = service_name
+        if user_name:
+            obj_dict["user_name"] = user_name
 
         # Validate and return the response model
         return cls(**obj_dict)

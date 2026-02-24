@@ -9,8 +9,7 @@ import json
 
 from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag, Payment, Coupon, CouponUsage, OfferService
 from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, BookingConfirm, CreatePaymentRequest, ApplyCouponRequest, CouponInfoResponse
-#from kafka_producer_consumer import kafka_payment_booking_service
-
+import asyncio
 
 
 async def create_booking(db: Session, booking_data: BookingCreate) -> BookingResponse:
@@ -31,7 +30,33 @@ async def create_booking(db: Session, booking_data: BookingCreate) -> BookingRes
     db.commit()
     db.refresh(new_booking)
 
-    return BookingResponse.from_orm(new_booking)
+    service_name, user_name = await fetch_names(new_booking)
+    return BookingResponse.from_orm(new_booking, service_name=service_name, user_name=user_name)
+
+async def fetch_names(booking):
+    """Helper to fetch user and service names via Kafka"""
+    from kafka_producer_consumer import kafka_payment_booking_service
+    user_name = None
+    service_name = None
+    try:
+        user_task = kafka_payment_booking_service.get_user_details('microservice_request', booking.user_id)
+        service_task = kafka_payment_booking_service.get_service_details('service_request', booking.service_id)
+        
+        user_details, service_details = await asyncio.gather(user_task, service_task)
+        
+        # print(f"DEBUG: user_details response: {user_details}")
+        # print(f"DEBUG: service_details response: {service_details}")
+
+        if user_details and 'user_data' in user_details and user_details['user_data'].get('user_profile'):
+            profile = user_details['user_data']['user_profile']
+            user_name = f"{profile.get('first_name', '')} {profile.get('last_name', '')}".strip()
+        
+        if service_details and 'service_data' in service_details:
+            service_name = service_details['service_data'].get('service_name')
+    except Exception as e:
+        print(f"Error fetching names for booking {booking.booking_id}: {e}")
+    
+    return service_name, user_name
 
 async def get_booking(db: Session, booking_id: str) -> BookingResponse:
     """
@@ -41,15 +66,26 @@ async def get_booking(db: Session, booking_id: str) -> BookingResponse:
     booking = result.scalars().first()
     if not booking:
         raise ValueError(f"Booking with id {booking_id} not found.")
-    return BookingResponse.from_orm(booking)  
+    
+    service_name, user_name = await fetch_names(booking)
+    return BookingResponse.from_orm(booking, service_name=service_name, user_name=user_name)  
 
-async def get_all_bookings(db: Session) -> List[BookingResponse]:
+async def get_all_bookings(db: Session, skip: int = 0, limit: int = 10) -> List[BookingResponse]:
     """
-    Retrieve all bookings from the database.
+    Retrieve all bookings from the database with pagination.
     """
-    result = db.execute(select(Booking))
+    result = db.execute(select(Booking).offset(skip).limit(limit))
     bookings = result.scalars().all()
-    return [BookingResponse.from_orm(booking) for booking in bookings]
+    
+    # Fetch names for all bookings in parallel
+    tasks = [fetch_names(booking) for booking in bookings]
+    names_list = await asyncio.gather(*tasks)
+    
+    responses = []
+    for booking, (service_name, user_name) in zip(bookings, names_list):
+        responses.append(BookingResponse.from_orm(booking, service_name=service_name, user_name=user_name))
+    
+    return responses
 
 async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection):
     booking = db.query(Booking).filter(Booking.booking_id == worker_selection.booking_id).first()
@@ -113,9 +149,10 @@ async def get_booking_summary(db: Session, booking_id: str):
         return {"error": "Booking not found"}
     
     user_details = await kafka_payment_booking_service.get_user_details('microservice_request', booking.user_id)
+    print(f"DEBUG summary: user_details: {user_details}")
     user_name = None
     if user_details['user_data']['user_profile']:
-        user_name = user_details['user_data']['user_profile']['first_name']+user_details['user_data']['user_profile']['last_name'] 
+        user_name = user_details['user_data']['user_profile']['first_name']+" "+user_details['user_data']['user_profile']['last_name'] 
     user_email = user_details['user_data']['user_auth_info']['user_data']['email'] 
     user_mobile = user_details['user_data']['user_auth_info']['user_data']['phone']
 
@@ -127,6 +164,7 @@ async def get_booking_summary(db: Session, booking_id: str):
         addons = db.query(WorkerAddonService).filter(WorkerAddonService.booking_worker_id == worker.id).all()
 
         worker_details = await kafka_payment_booking_service.get_worker_details('microservice_request', worker.worker_id)
+        print(f"DEBUG summary: worker_details: {worker_details}")
 
         skills_list = []
         total_charge = 0
