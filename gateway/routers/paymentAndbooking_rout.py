@@ -119,6 +119,64 @@ async def get_all_bookings_gateway(
         )
 
 @router.post(
+    "/worker-bookings",
+    response_model=Union[_schemas.PaginatedBookingGatewayResponse, _schemas.ErrorResponse],
+    tags=["Bookings"]
+)
+async def get_worker_bookings_gateway(
+    request_data: _schemas.WorkerBookingGatewayRequest,
+    user: dict = Depends(verify_token),
+):
+    """
+    Gateway API that forwards the `get_bookings_by_worker` request to the Booking microservice.
+    """
+    try:
+        worker_id = request_data.body.worker_id
+        params = {
+            "page": request_data.body.page,
+            "size": request_data.body.size
+        }
+        response = requests.get(
+            f"{PAYMENT_AND_BOOKING_BASE_URL}/api/worker/{worker_id}",
+            params=params
+        )
+
+        if response.status_code == 200:
+            response_data = response.json()
+            # logging.info(f"Microservice response: {response_data}")
+            return build_response(
+                data=response_data,
+                request_id=request_data.header.requestId,
+                message="Worker bookings retrieved successfully",
+                code="200",
+            )
+        else:
+            logging.error(f"Microservice error {response.status_code}: {response.text}")
+            return build_response(
+                data={"status_code": str(response.status_code), "detail": response.text},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to fetch worker bookings") if response.status_code != 500 else "Internal Server Error",
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("Booking microservice is unavailable")
+        return build_response(
+            data={},
+            message="Booking microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post(
     "/create-booking",
     response_model=Union[_schemas.BookingCreateResponse, _schemas.ErrorResponse]
 )

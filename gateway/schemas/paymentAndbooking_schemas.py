@@ -37,8 +37,8 @@ class BookingBase(BaseModel):
     booking_type: BookingType
     service_id: str
     #user_id: str
-    dates: List[str]
-    times: List[str]
+    dates: Union[str, List[str]]
+    times: Union[str, List[str]]
 
 class BookingResponse(BookingBase):
     booking_id: str
@@ -63,6 +63,27 @@ class AllBookingsGatewayResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: List[BookingResponse]
+
+class WorkerBookingBody(BaseModel):
+    worker_id: str
+    page: int = 1
+    size: int = 10
+
+class WorkerBookingGatewayRequest(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: WorkerBookingBody
+
+class PaginatedBookingBody(BaseModel):
+    data: List[BookingResponse]
+    total_count: int
+    page: int
+    size: int
+
+class PaginatedBookingGatewayResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: PaginatedBookingBody
 
 class BookingListBody(BaseModel):
     skip: int = 0

@@ -68,20 +68,20 @@ class UserProfileOut(BaseModel):
     first_name: str
     last_name: str
     phone_number: Optional[str]
-    date_of_birth: Optional[str]
+    date_of_birth: Optional[datetime]
     profile_picture_url: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class WorkerProfileOut(BaseModel):
     worker_id: str
-    hourly_rate: Optional[float]
+    hourly_rate: Optional[Decimal]
     availability_status: Optional[str]
     bio: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SkillOut(BaseModel):
     skill_id: str
@@ -93,14 +93,14 @@ class SkillOut(BaseModel):
     discount: float
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SkillWithZoneOut(BaseModel):
     skill: SkillOut
     worker_zone: WorkerZoneOut
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class RatingOut(BaseModel):
     average: float | None
@@ -114,7 +114,7 @@ class WorkerWithSkillsAndZonesOut(BaseModel):
     bookmarked : bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Gateway Response Schema
 class WorkerFilterGatewayResponse(BaseModel):
@@ -220,7 +220,7 @@ class CommentGatewayResponseBody(CommentResponseBase):
     replies: List["CommentGatewayResponseBody"] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CommentGatewayResponse(BaseModel):
     header: ResponseHeader
@@ -270,7 +270,7 @@ class ReactionResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CommentReactionGatewayRequest(BaseModel):
     meta: dict = {}
@@ -283,7 +283,7 @@ class CommentReactionGatewayResponse(BaseModel):
     meta: dict = {}
     body: ReactionResponse  # from your existing service schemas
 
-CommentGatewayResponseBody.update_forward_refs()
+CommentGatewayResponseBody.model_rebuild()
 
 class WorkerBookmarkCreate(BaseModel):
     worker_id: str
@@ -301,4 +301,76 @@ class WorkerBookmarkResponse(BaseModel):
     header: ResponseHeader
     meta: dict = {}
     body: List[WorkerBookmarkOut]
+
+from typing import Optional, List, Dict, Literal
+
+# ... (rest of imports)
+
+# Worker Portfolio Setup Schemas
+class WorkerSkillZoneCreate(BaseModel):
+    skill_id: str
+    skill_name: str
+    service_charge: Decimal
+    charge_unit: Literal['hourly', 'daily', 'per job']
+    discount: Optional[Decimal] = 0
+
+class WorkerZoneCreate(BaseModel):
+    division: str
+    district: str
+    thana: str
+    road_number: Optional[str] = None
+    latitude: Optional[Decimal] = None
+    longitude: Optional[Decimal] = None
+    skills: List[WorkerSkillZoneCreate]
+
+class WorkerPortfolioCreate(BaseModel):
+    hourly_rate: Optional[Decimal] = None
+    experience_years: Optional[int] = None
+    bio: Optional[str] = None
+    working_zones: List[WorkerZoneCreate]
+
+class WorkerPortfolioRequestBody(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: WorkerPortfolioCreate
+
+class WorkerPortfolioOut(BaseModel):
+    worker_id: str
+    message: str
+
+class WorkerPortfolioResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: WorkerPortfolioOut
+
+# Skill Schemas
+class SkillCreate(BaseModel):
+    skill_name: str
+    category: Optional[str] = None
+    description: Optional[str] = None
+
+class SkillSimpleOut(BaseModel):
+    skill_id: str
+    skill_name: str
+    category: Optional[str]
+    description: Optional[str]
+
+class SkillCreateRequestBody(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+    body: SkillCreate
+
+class SkillCreateResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: SkillSimpleOut
+
+class SkillListRequestBody(BaseModel):
+    header: RequestHeader
+    meta: dict = {}
+
+class SkillListResponse(BaseModel):
+    header: ResponseHeader
+    meta: dict = {}
+    body: List[SkillSimpleOut]
 

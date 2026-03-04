@@ -686,3 +686,124 @@ async def list_worker_bookmarks_gateway(user_id: str, request_id: str):
             code="500",
             request_id=request_id,
         )
+
+@router.post(
+    "/worker/portfolio",
+    response_model=Union[_schemas.WorkerPortfolioResponse, _schemas.ErrorResponse],
+)
+async def setup_worker_portfolio_gateway(request_data: _schemas.WorkerPortfolioRequestBody,
+                                         user: dict = Depends(verify_token)):
+    """
+    Gateway API to forward the `setup_worker_portfolio` request to the User microservice.
+    """
+    try:
+        portfolio_data = jsonable_encoder(request_data.body)
+        # Inject user_id from token
+        portfolio_data["user_id"] = user["user_id"]
+
+        response = requests.post(
+            f"{USER_SETTINGS_BASE_URL}/api/worker/portfolio",
+            json=portfolio_data
+        )
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Worker portfolio setup successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to setup worker portfolio"),
+                code=str(response.status_code),
+            )
+
+    except requests.exceptions.ConnectionError:
+        logging.error("User microservice is unavailable")
+        return build_response(
+            data={},
+            message="User microservice is unavailable",
+            code="503",
+            request_id=request_data.header.requestId,
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post(
+    "/create-skill",
+    response_model=Union[_schemas.SkillCreateResponse, _schemas.ErrorResponse],
+)
+async def create_skill_gateway(request_data: _schemas.SkillCreateRequestBody):
+    """
+    Gateway API to forward the `create_skill` request to the User microservice.
+    """
+    try:
+        skill_data = jsonable_encoder(request_data.body)
+        response = requests.post(f"{USER_SETTINGS_BASE_URL}/api/skills", json=skill_data)
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Skill created successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to create skill"),
+                code=str(response.status_code),
+            )
+    except Exception as e:
+        logging.error(f"Error creating skill: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+
+@router.post(
+    "/get-skills",
+    response_model=Union[_schemas.SkillListResponse, _schemas.ErrorResponse],
+)
+async def list_skills_gateway(request_data: _schemas.SkillListRequestBody):
+    """
+    Gateway API to forward the `get_skills` request to the User microservice.
+    """
+    try:
+        response = requests.get(f"{USER_SETTINGS_BASE_URL}/api/skills")
+
+        if response.status_code == 200:
+            return build_response(
+                data=response.json(),
+                request_id=request_data.header.requestId,
+                message="Skills retrieved successfully",
+                code="200",
+            )
+        else:
+            return build_response(
+                data={},
+                request_id=request_data.header.requestId,
+                message=response.json().get("detail", "Failed to fetch skills"),
+                code=str(response.status_code),
+            )
+    except Exception as e:
+        logging.error(f"Error fetching skills: {e}")
+        return build_response(
+            data={},
+            message=f"An unexpected error occurred: {str(e)}",
+            code="500",
+            request_id=request_data.header.requestId,
+        )
+

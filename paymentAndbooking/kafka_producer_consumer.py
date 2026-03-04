@@ -13,26 +13,46 @@ class PaymentBookingService:
         self.pending_requests = {}
 
     async def start(self):
+        print(f"Starting Kafka Producer and Consumer for topics {self.response_topics}...")
         await self.producer.start()
         await self.consumer.start()
+        
+        # Warm-up: Wait for the consumer to be assigned partitions
+        # This prevents missing the first few messages during auto-creation
+        print("Waiting for Kafka partition assignment...")
+        max_wait = 10
+        for i in range(max_wait):
+            if self.consumer.assignment():
+                print(f"Kafka Consumer assigned to: {self.consumer.assignment()}")
+                break
+            await asyncio.sleep(1)
+        else:
+            print("Warning: Kafka Consumer started but no partitions assigned yet. This might cause initial message loss.")
+
         asyncio.create_task(self.process_requests())
+        print("Kafka Service is now READY.")
 
     async def process_requests(self):
         from service import get_cart_data
+        print("Listening for Kafka messages...")
         async for msg in self.consumer:
-            request = json.loads(msg.value.decode("utf-8"))
-            request_id = request.get("request_id")
-            if request.get('request_type') == 'cart_info':
-                db_gen = get_db()
-                db = next(db_gen)
-                cart_data = get_cart_data(db)  # Fetch user details
-                #print(cart_data)
-                db_gen.close()
-                response = {"request_id": request_id, "cart_data": cart_data}
-                await self.producer.send_and_wait("service_request", json.dumps(response).encode("utf-8"))
-            elif request_id in self.pending_requests:
-                future = self.pending_requests.pop(request_id)
-                future.set_result(request)  # or request['data']
+            try:
+                request = json.loads(msg.value.decode("utf-8"))
+                print(f"DEBUG Kafka: Received message on {msg.topic}: {request}")
+                request_id = request.get("request_id")
+                if request.get('request_type') == 'cart_info':
+                    db_gen = get_db()
+                    db = next(db_gen)
+                    cart_data = get_cart_data(db)  # Fetch user details
+                    #print(cart_data)
+                    db_gen.close()
+                    response = {"request_id": request_id, "cart_data": cart_data}
+                    await self.producer.send_and_wait("service_request", json.dumps(response).encode("utf-8"))
+                elif request_id in self.pending_requests:
+                    future = self.pending_requests.pop(request_id)
+                    future.set_result(request)  # or request['data']
+            except Exception as e:
+                print(f"Error processing Kafka message: {e}")
 
     async def get_user_details(self, request_topic, user_id: str):
         request_id = str(uuid.uuid4())

@@ -15,6 +15,7 @@ class KafkaProducerService:
         if not self.producer:
             raise Exception("Producer not started.")
         
+        print(f"DEBUG Gateway Kafka: Sending message to {topic}: {value}")
         message = json.dumps(value).encode("utf-8")
         await self.producer.send_and_wait(topic, message)
 

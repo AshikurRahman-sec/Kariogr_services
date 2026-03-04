@@ -90,7 +90,6 @@ async def get_workers_by_zone(
     """
     Fetch paginated workers by specific user_id and working zone.
     """
-    workers, total_workers = await _service.get_workers_by_zone(db, request.worker_id, request.district, size, page)
     try:
         workers, total_workers = await _service.get_workers_by_zone(db, request.worker_id, request.district, size, page)
         
@@ -128,7 +127,6 @@ async def create_worker_skill_rating(
             response_model=_schemas.WorkerWithSkillsAndZonesOut
             )
 async def get_worker_details(worker_id: str, skill_id: str, db: Session = Depends(get_db)):
-    result = await _service.get_worker_details_by_worker_and_skill(db, worker_id, skill_id)
     try:
         result = await _service.get_worker_details_by_worker_and_skill(db, worker_id, skill_id)
         if not result:
@@ -176,7 +174,7 @@ def react_to_comment(
     db: Session = Depends(get_db),
 ):
     try:
-        return _service.create_reaction(db, reaction_data)
+        return _service.create_reaction(db, reaction_data.user_id, reaction_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
@@ -205,3 +203,27 @@ async def get_worker_bookmarks(user_id: str, db: Session = Depends(get_db)):
         return _service.list_worker_bookmarks(db, user_id)
     except Exception:
         raise HTTPException(status_code=500, detail="An error occurred while fetching bookmarks")
+
+@router.post("/worker/portfolio", response_model=_schemas.WorkerPortfolioOut)
+async def setup_worker_portfolio(portfolio_data: _schemas.WorkerPortfolioCreate, db: Session = Depends(get_db)):
+    try:
+        return await _service.setup_worker_portfolio(db, portfolio_data)
+    except Exception as e:
+        logging.error(f"Error setting up worker portfolio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/skills", response_model=_schemas.SkillSimpleOut)
+async def create_skill(skill_data: _schemas.SkillCreate, db: Session = Depends(get_db)):
+    try:
+        return await _service.create_skill(db, skill_data)
+    except Exception as e:
+        logging.error(f"Error creating skill: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/skills", response_model=List[_schemas.SkillSimpleOut])
+async def get_skills(db: Session = Depends(get_db)):
+    try:
+        return await _service.get_all_skills(db)
+    except Exception as e:
+        logging.error(f"Error fetching skills: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

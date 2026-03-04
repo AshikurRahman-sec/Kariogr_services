@@ -6,11 +6,11 @@ from decimal import Decimal
 
 # UserProfile Schemas
 class UserProfileUpdate(BaseModel):
-    first_name: Optional[str]
-    last_name: Optional[str]
-    phone_number: Optional[str]
-    date_of_birth: Optional[datetime]
-    profile_picture_url: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    profile_picture_url: Optional[str] = None
 
 class UserProfileOut(BaseModel):
     profile_id: str
@@ -26,15 +26,15 @@ class UserProfileOut(BaseModel):
 
 # WorkerProfile Schemas
 class WorkerProfileUpdate(BaseModel):
-    hourly_rate: Optional[float]
-    availability_status: Optional[str]
-    bio: Optional[str]
+    hourly_rate: Optional[Decimal] = None
+    availability_status: Optional[str] = None
+    bio: Optional[str] = None
 
 class WorkerProfileOut(BaseModel):
     worker_id: str
     #user_id: str
-    hourly_rate: Optional[float]
-    availability_status: Optional[str]
+    hourly_rate: Optional[Decimal] = None
+    availability_status: Optional[str] = None
     bio: Optional[str]
 
     class Config:
@@ -66,6 +66,20 @@ class WorkerZoneOut(BaseModel):
         from_attributes = True
 
 # Skill Info
+class SkillCreate(BaseModel):
+    skill_name: str
+    category: Optional[str] = None
+    description: Optional[str] = None
+
+class SkillSimpleOut(BaseModel):
+    skill_id: str
+    skill_name: str
+    category: Optional[str]
+    description: Optional[str]
+
+    class Config:
+        from_attributes = True
+
 class SkillOut(BaseModel):
     skill_id: str
     skill_name: str
@@ -189,7 +203,7 @@ class CommentResponse(CommentBase):
     replies: List["CommentResponse"] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CreateReaction(BaseModel):
     comment_id: str
@@ -205,10 +219,10 @@ class ReactionResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-CommentResponse.update_forward_refs()
+CommentResponse.model_rebuild()
 
 class WorkerBookmarkCreate(BaseModel):
     user_id: str   # This should be the profile_id from UserProfile
@@ -222,3 +236,35 @@ class WorkerBookmarkOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+from typing import Optional, List, Literal
+
+# ... (rest of imports)
+
+# Worker Portfolio Setup Schemas
+class WorkerSkillZoneCreate(BaseModel):
+    skill_id: str
+    skill_name: str
+    service_charge: Decimal
+    charge_unit: Literal['hourly', 'daily', 'per job']
+    discount: Optional[Decimal] = 0
+
+class WorkerZoneCreate(BaseModel):
+    division: str
+    district: str
+    thana: str
+    road_number: Optional[str] = None
+    latitude: Optional[Decimal] = None
+    longitude: Optional[Decimal] = None
+    skills: List[WorkerSkillZoneCreate]
+
+class WorkerPortfolioCreate(BaseModel):
+    user_id: str  # profile_id of the user
+    hourly_rate: Optional[Decimal] = None
+    experience_years: Optional[int] = None
+    bio: Optional[str] = None
+    working_zones: List[WorkerZoneCreate]
+
+class WorkerPortfolioOut(BaseModel):
+    worker_id: str
+    message: str

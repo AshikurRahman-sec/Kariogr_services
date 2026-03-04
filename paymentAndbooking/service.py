@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
 from decimal import Decimal
@@ -31,7 +32,7 @@ async def create_booking(db: Session, booking_data: BookingCreate) -> BookingRes
     db.refresh(new_booking)
 
     service_name, user_name = await fetch_names(new_booking)
-    return BookingResponse.from_orm(new_booking, service_name=service_name, user_name=user_name)
+    return BookingResponse.from_orm_custom(new_booking, service_name=service_name, user_name=user_name)
 
 async def fetch_names(booking):
     """Helper to fetch user and service names via Kafka"""
@@ -68,7 +69,7 @@ async def get_booking(db: Session, booking_id: str) -> BookingResponse:
         raise ValueError(f"Booking with id {booking_id} not found.")
     
     service_name, user_name = await fetch_names(booking)
-    return BookingResponse.from_orm(booking, service_name=service_name, user_name=user_name)  
+    return BookingResponse.from_orm_custom(booking, service_name=service_name, user_name=user_name)  
 
 async def get_all_bookings(db: Session, skip: int = 0, limit: int = 10) -> List[BookingResponse]:
     """
@@ -83,9 +84,49 @@ async def get_all_bookings(db: Session, skip: int = 0, limit: int = 10) -> List[
     
     responses = []
     for booking, (service_name, user_name) in zip(bookings, names_list):
-        responses.append(BookingResponse.from_orm(booking, service_name=service_name, user_name=user_name))
+        responses.append(BookingResponse.from_orm_custom(booking, service_name=service_name, user_name=user_name))
     
     return responses
+
+async def get_bookings_by_worker(db: Session, worker_id: str, skip: int = 0, limit: int = 10):
+    """
+    Retrieve all bookings for a specific worker with pagination.
+    """
+    # Query bookings associated with the worker_id through BookingWorker table
+    query = (
+        select(Booking)
+        .join(BookingWorker, Booking.booking_id == BookingWorker.booking_id)
+        .where(BookingWorker.worker_id == worker_id)
+        .order_by(Booking.created_at.desc())
+    )
+    
+    # Get total count for pagination
+    total_count_query = select(func.count()).select_from(
+        select(Booking.booking_id)
+        .join(BookingWorker, Booking.booking_id == BookingWorker.booking_id)
+        .where(BookingWorker.worker_id == worker_id)
+        .subquery()
+    )
+    total_count = db.execute(total_count_query).scalar() or 0
+
+    # Apply pagination
+    result = db.execute(query.offset(skip).limit(limit))
+    bookings = result.scalars().all()
+    
+    # Fetch names for all bookings in parallel
+    tasks = [fetch_names(booking) for booking in bookings]
+    names_list = await asyncio.gather(*tasks)
+    
+    booking_responses = []
+    for booking, (service_name, user_name) in zip(bookings, names_list):
+        booking_responses.append(BookingResponse.from_orm_custom(booking, service_name=service_name, user_name=user_name))
+    
+    return {
+        "data": booking_responses,
+        "total_count": total_count,
+        "page": (skip // limit) + 1,
+        "size": limit
+    }
 
 async def add_workers_to_booking(db: Session, worker_selection: WorkerSelection):
     booking = db.query(Booking).filter(Booking.booking_id == worker_selection.booking_id).first()

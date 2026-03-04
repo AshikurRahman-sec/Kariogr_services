@@ -26,17 +26,32 @@ class KafkaConsumerService:
             auto_offset_reset="earliest"
         )
         await self.consumer.start()
-        logger.info("Kafka Consumer started.")
+        logger.info(f"Kafka Consumer started for topics: {self.topics}")
+
+        # Warm-up: Wait for partition assignment
+        logger.info("Waiting for Kafka partition assignment...")
+        max_wait = 10
+        for i in range(max_wait):
+            if self.consumer.assignment():
+                logger.info(f"Kafka Consumer assigned to: {self.consumer.assignment()}")
+                break
+            await asyncio.sleep(1)
+        else:
+            logger.warning("Kafka Consumer started without partitions assigned yet.")
+        
+        logger.info("Kafka Service is now READY.")
 
     async def consume_messages(self):
         if not self.consumer:
             logger.error("Kafka consumer not initialized.")
             return
         
+        logger.info("Listening for Kafka messages...")
         try:
             async for msg in self.consumer:
                 try:
                     data = json.loads(msg.value.decode("utf-8"))
+                    logger.info(f"DEBUG Kafka Notification: Received message on {msg.topic}: {data}")
                     if msg.topic == "email_verification":
                         await _service.send_email_verification_otp(data)
                     elif msg.topic == "password_reset":

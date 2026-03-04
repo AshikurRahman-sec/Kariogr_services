@@ -44,38 +44,54 @@ class BookingResponse(BookingBase):
     status: BookingStatus
     service_name: Optional[str] = None
     user_name: Optional[str] = None
-    created_at: str
-    updated_at: Optional[str]
+    created_at: Any # Changed from str to Any to handle datetime or str
+    updated_at: Optional[Any]
 
     class Config:
         from_attributes = True 
 
     @classmethod
-    def from_orm(cls, obj, service_name=None, user_name=None):
+    def from_orm_custom(cls, obj, service_name=None, user_name=None):
         """
         Custom method to transform an ORM object into a BookingResponse instance.
         """
-        obj_dict = {key: getattr(obj, key, None) for key in obj.__dict__ if not key.startswith('_')}
+        # Get data from the model instance
+        data = {
+            "booking_id": obj.booking_id,
+            "user_id": obj.user_id,
+            "service_area": obj.service_area,
+            "home_address": obj.home_address,
+            "worker_duration": obj.worker_duration,
+            "booking_type": obj.booking_type,
+            "service_id": obj.service_id,
+            "status": obj.status,
+            "created_at": obj.created_at.isoformat() if obj.created_at else None,
+            "updated_at": obj.updated_at.isoformat() if obj.updated_at else None,
+        }
         
-        # Convert datetime fields to ISO format strings
-        if isinstance(obj_dict.get("created_at"), datetime):
-            obj_dict["created_at"] = obj_dict["created_at"].isoformat()
-        if isinstance(obj_dict.get("updated_at"), datetime):
-            obj_dict["updated_at"] = obj_dict["updated_at"].isoformat()
-
         # Deserialize JSON strings to lists for dates and times
-        if isinstance(obj_dict.get("dates"), str):
-            obj_dict["dates"] = json.loads(obj_dict["dates"])
-        if isinstance(obj_dict.get("times"), str):
-            obj_dict["times"] = json.loads(obj_dict["times"])
+        if isinstance(obj.dates, str):
+            data["dates"] = json.loads(obj.dates)
+        else:
+            data["dates"] = obj.dates
+            
+        if isinstance(obj.times, str):
+            data["times"] = json.loads(obj.times)
+        else:
+            data["times"] = obj.times
 
         if service_name:
-            obj_dict["service_name"] = service_name
+            data["service_name"] = service_name
         if user_name:
-            obj_dict["user_name"] = user_name
+            data["user_name"] = user_name
 
-        # Validate and return the response model
-        return cls(**obj_dict)
+        return cls(**data)
+
+class PaginatedBookingResponse(BaseModel):
+    data: List[BookingResponse]
+    total_count: int
+    page: int
+    size: int
 
 class WorkerInfo(BaseModel):
     worker_id: str

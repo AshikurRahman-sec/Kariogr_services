@@ -43,6 +43,22 @@ async def get_all_bookings_handler(skip: int = Query(0, ge=0), limit: int = Quer
             detail=str(e)
         )
 
+@router.get("/worker/{worker_id}", response_model=_schemas.PaginatedBookingResponse, tags=["Bookings"])
+async def get_worker_bookings_handler(
+    worker_id: str, 
+    page: int = Query(1, ge=1), 
+    size: int = Query(10, ge=1), 
+    db: Session = Depends(get_db)
+):
+    try:
+        skip = (page - 1) * size
+        return await _service.get_bookings_by_worker(db, worker_id, skip=skip, limit=size)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
 @router.get("/{booking_id}", response_model=_schemas.BookingResponse, tags=["Bookings"])
 async def get_booking_handler(booking_id: str, db: Session = Depends(get_db)):
     try:

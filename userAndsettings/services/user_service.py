@@ -1,5 +1,6 @@
 import sqlalchemy.orm as _orm
 from sqlalchemy import select, func
+import uuid
 from uuid import UUID
 from fastapi import HTTPException
 
@@ -354,12 +355,13 @@ async def create_comment(db: _orm.Session, comment_data: _schemas.CreateComment)
         if not parent_comment:
             raise ValueError("Parent comment not found.")
         depth = parent_comment.depth + 1
-        # if depth > 3:
-        #     raise ValueError("Max reply depth exceeded.")
 
-    user_profiel_id = db.query(_model.UserProfile).filter_by(user_id=comment_data.user_id).first()
+    user_profile = db.query(_model.UserProfile).filter_by(user_id=comment_data.user_id).first()
+    if not user_profile:
+        raise ValueError("User profile not found.")
+        
     comment = _model.WorkerSkillComment(
-        user_id=user_profiel_id,
+        user_id=user_profile.profile_id,
         worker_id=comment_data.worker_id,
         skill_id=comment_data.skill_id,
         comment_text=comment_data.comment_text,
@@ -475,3 +477,113 @@ def list_worker_bookmarks(db: _orm.Session, user_id: str):
     return db.query(_model.WorkerBookmark).filter(
         _model.WorkerBookmark.user_id == user_id
     ).all()
+
+
+async def setup_worker_portfolio(db: _orm.Session, portfolio_data: _schemas.WorkerPortfolioCreate):
+    # 1. Create or Update WorkerProfile
+    db_worker = db.query(_model.WorkerProfile).filter(_model.WorkerProfile.user_id == portfolio_data.user_id).first()
+
+    if not db_worker:
+        db_worker = _model.WorkerProfile(
+            user_id=portfolio_data.user_id,
+            hourly_rate=portfolio_data.hourly_rate,
+            experience_years=portfolio_data.experience_years,
+            bio=portfolio_data.bio,
+            availability_status='available'
+        )
+        db.add(db_worker)
+        db.flush()  # To get db_worker.worker_id
+    else:
+        db_worker.hourly_rate = portfolio_data.hourly_rate
+        db_worker.experience_years = portfolio_data.experience_years
+        db_worker.bio = portfolio_data.bio
+
+    worker_id = db_worker.worker_id
+
+    # 2. Process Working Zones and Skills
+    for zone_data in portfolio_data.working_zones:
+        # Check if zone already exists for this worker
+        db_zone = db.query(_model.WorkerZone).filter(
+            _model.WorkerZone.worker_id == worker_id,
+            _model.WorkerZone.division == zone_data.division,
+            _model.WorkerZone.district == zone_data.district,
+            _model.WorkerZone.thana == zone_data.thana
+        ).first()
+
+        if not db_zone:
+            db_zone = _model.WorkerZone(
+                worker_id=worker_id,
+                division=zone_data.division,
+                district=zone_data.district,
+                thana=zone_data.thana,
+                road_number=zone_data.road_number,
+                latitude=zone_data.latitude,
+                longitude=zone_data.longitude
+            )
+            db.add(db_zone)
+            db.flush()
+
+        # 3. Process Skills for this Zone
+        for skill_data in zone_data.skills:
+            # Check if Skill exists, if not create it (from Service hierarchy)
+            db_skill = db.query(_model.Skill).filter(_model.Skill.skill_id == skill_data.skill_id).first()
+            if not db_skill:
+                db_skill = _model.Skill(
+                    skill_id=skill_data.skill_id,
+                    skill_name=skill_data.skill_name
+                )
+                db.add(db_skill)
+                db.flush()
+
+            # Ensure WorkerSkill entry exists
+            db_worker_skill = db.query(_model.WorkerSkill).filter(
+                _model.WorkerSkill.worker_id == worker_id,
+                _model.WorkerSkill.skill_id == skill_data.skill_id
+            ).first()
+            if not db_worker_skill:
+                db_worker_skill = _model.WorkerSkill(
+                    worker_id=worker_id,
+                    skill_id=skill_data.skill_id,
+                    proficiency_level='intermediate'  # Default value
+                )
+                db.add(db_worker_skill)
+
+            # Check if WorkerSkillZone already exists
+            db_skill_zone = db.query(_model.WorkerSkillZone).filter(
+                _model.WorkerSkillZone.worker_id == worker_id,
+                _model.WorkerSkillZone.skill_id == skill_data.skill_id,
+                _model.WorkerSkillZone.worker_zone_id == db_zone.worker_zone_id
+            ).first()
+
+            if db_skill_zone:
+                db_skill_zone.service_charge = skill_data.service_charge
+                db_skill_zone.charge_unit = skill_data.charge_unit
+                db_skill_zone.discount = skill_data.discount
+            else:
+                db_skill_zone = _model.WorkerSkillZone(
+                    worker_id=worker_id,
+                    skill_id=skill_data.skill_id,
+                    worker_zone_id=db_zone.worker_zone_id,
+                    service_charge=skill_data.service_charge,
+                    charge_unit=skill_data.charge_unit,
+                    discount=skill_data.discount
+                )
+                db.add(db_skill_zone)
+
+    db.commit()
+    return {"worker_id": worker_id, "message": "Worker portfolio setup successfully"}
+
+async def create_skill(db: _orm.Session, skill_data: _schemas.SkillCreate):
+    db_skill = _model.Skill(
+        skill_id=str(uuid.uuid4()),
+        skill_name=skill_data.skill_name,
+        category=skill_data.category,
+        description=skill_data.description
+    )
+    db.add(db_skill)
+    db.commit()
+    db.refresh(db_skill)
+    return db_skill
+
+async def get_all_skills(db: _orm.Session):
+    return db.query(_model.Skill).all()
