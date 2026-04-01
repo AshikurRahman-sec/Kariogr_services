@@ -37,27 +37,31 @@ async def create_booking(db: Session, booking_data: BookingCreate) -> BookingRes
 async def fetch_names(booking):
     """Helper to fetch user and service names via Kafka"""
     from kafka_producer_consumer import kafka_payment_booking_service
+
     user_name = None
     service_name = None
+
     try:
-        user_task = kafka_payment_booking_service.get_user_details('microservice_request', booking.user_id)
-        service_task = kafka_payment_booking_service.get_service_details('service_request', booking.service_id)
-        
-        user_details, service_details = await asyncio.gather(user_task, service_task)
-        
-        # print(f"DEBUG: user_details response: {user_details}")
-        # print(f"DEBUG: service_details response: {service_details}")
+        # First call (waits until done)
+        user_details = await kafka_payment_booking_service.get_user_details(
+            'microservice_request', booking.user_id
+        )
+        # Second call (runs only after first finishes)
+        service_details = await kafka_payment_booking_service.get_service_details(
+            'service_request', booking.service_id
+        )
 
         if user_details and 'user_data' in user_details and user_details['user_data'].get('user_profile'):
             profile = user_details['user_data']['user_profile']
             user_name = f"{profile.get('first_name', '')} {profile.get('last_name', '')}".strip()
-        
+
         if service_details and 'service_data' in service_details:
             service_name = service_details['service_data'].get('service_name')
+
     except Exception as e:
         print(f"Error fetching names for booking {booking.booking_id}: {e}")
-    
-    return service_name, user_name
+
+    return user_name, service_name
 
 async def get_booking(db: Session, booking_id: str) -> BookingResponse:
     """
