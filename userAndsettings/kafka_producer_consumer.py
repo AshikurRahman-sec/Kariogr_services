@@ -18,13 +18,15 @@ class UserAndSettingsService:
             "microservice_request",  # topic for requests like 'user_details'
             bootstrap_servers=self.brokers,
             group_id="user_service_group",
-            auto_offset_reset="earliest"
+            auto_offset_reset="earliest",
+            session_timeout_ms=30000,
         )
         self.internal_consumer = AIOKafkaConsumer(
             "user_request",  # topic for responses like 'user_auth_info'
             bootstrap_servers=self.brokers,
             group_id="user_internal_group",  # different group!
-            auto_offset_reset="earliest"
+            auto_offset_reset="earliest",
+            session_timeout_ms=30000,
         )
         self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
         self.pending_requests = {}

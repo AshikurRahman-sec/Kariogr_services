@@ -81,22 +81,16 @@ async def get_all_bookings(db: Session, skip: int = 0, limit: int = 10) -> List[
     """
     result = db.execute(select(Booking).offset(skip).limit(limit))
     bookings = result.scalars().all()
-    
-    responses = []
 
-    for booking in bookings:
-        # Run one by one (sequential)
-        user_name, service_name = await fetch_names(booking)
-
-        responses.append(
-            BookingResponse.from_orm_custom(
-                booking,
-                service_name=service_name,
-                user_name=user_name
-            )
+    names_list = await asyncio.gather(*[fetch_names(b) for b in bookings])
+    return [
+        BookingResponse.from_orm_custom(
+            booking,
+            service_name=service_name,
+            user_name=user_name,
         )
-
-    return responses
+        for booking, (user_name, service_name) in zip(bookings, names_list)
+    ]
 
 async def get_bookings_by_worker(db: Session, worker_id: str, skip: int = 0, limit: int = 10):
     """

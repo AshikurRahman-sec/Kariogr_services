@@ -9,7 +9,13 @@ class PaymentBookingService:
         self.brokers = brokers
         self.response_topics = response_topics
         self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
-        self.consumer = AIOKafkaConsumer(*self.response_topics, bootstrap_servers=self.brokers, group_id="payment_group", auto_offset_reset="earliest")
+        self.consumer = AIOKafkaConsumer(
+            *self.response_topics,
+            bootstrap_servers=self.brokers,
+            group_id="payment_group",
+            auto_offset_reset="earliest",
+            session_timeout_ms=30000,
+        )
         self.pending_requests = {}
 
     async def start(self):

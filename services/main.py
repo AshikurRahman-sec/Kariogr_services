@@ -36,7 +36,7 @@ async def on_startup():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await kafka_service_service.start()
+    await kafka_service_service.stop()
 
 # Endpoint to check if the API is live
 @app.get("/check_api")

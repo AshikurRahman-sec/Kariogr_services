@@ -13,7 +13,15 @@ class ServiceService:
     def __init__(self, brokers: str, response_topics: list):
         self.brokers = brokers
         self.response_topics = response_topics
-        self.consumer = AIOKafkaConsumer(*self.response_topics, bootstrap_servers=self.brokers, group_id="user_service_group", auto_offset_reset="earliest")
+        # Must not share group_id with userAndsettings (microservice_request): same group + different
+        # subscriptions causes endless rebalances, UnknownMemberIdError, and lost RPC replies.
+        self.consumer = AIOKafkaConsumer(
+            *self.response_topics,
+            bootstrap_servers=self.brokers,
+            group_id="catalog_service_group",
+            auto_offset_reset="earliest",
+            session_timeout_ms=30000,
+        )
         self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
         self.pending_requests = {}
 
