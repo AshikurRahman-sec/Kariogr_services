@@ -1,20 +1,31 @@
 import asyncio
 import json
 import uuid
+
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
-from database import get_db
+
+_KAFKA_CONSUMER_COMMON = dict(
+    session_timeout_ms=45000,
+    heartbeat_interval_ms=15000,
+    max_poll_interval_ms=600000,
+    request_timeout_ms=120000,
+)
+
 
 class PaymentBookingService:
     def __init__(self, brokers: str, response_topics: list):
         self.brokers = brokers
         self.response_topics = response_topics
-        self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.brokers,
+            request_timeout_ms=120000,
+        )
         self.consumer = AIOKafkaConsumer(
             *self.response_topics,
             bootstrap_servers=self.brokers,
             group_id="payment_group",
             auto_offset_reset="earliest",
-            session_timeout_ms=30000,
+            **_KAFKA_CONSUMER_COMMON,
         )
         self.pending_requests = {}
 
@@ -39,7 +50,6 @@ class PaymentBookingService:
         print("Kafka Service is now READY.")
 
     async def process_requests(self):
-        from service import get_cart_data
         print("Listening for Kafka messages...")
         async for msg in self.consumer:
             try:
@@ -47,11 +57,17 @@ class PaymentBookingService:
                 print(f"DEBUG Kafka: Received message on {msg.topic}: {request}")
                 request_id = request.get("request_id")
                 if request.get('request_type') == 'cart_info':
-                    db_gen = get_db()
-                    db = next(db_gen)
-                    cart_data = get_cart_data(db)  # Fetch user details
-                    #print(cart_data)
-                    db_gen.close()
+                    def _load_cart():
+                        from database import SessionLocal
+                        from service import get_cart_data
+
+                        s = SessionLocal()
+                        try:
+                            return get_cart_data(s)
+                        finally:
+                            s.close()
+
+                    cart_data = await asyncio.to_thread(_load_cart)
                     response = {"request_id": request_id, "cart_data": cart_data}
                     await self.producer.send_and_wait("service_request", json.dumps(response).encode("utf-8"))
                 elif request_id in self.pending_requests:

@@ -1,3 +1,4 @@
+import asyncio
 import sqlalchemy.orm as _orm
 from datetime import datetime, timedelta
 from jose import jwt
@@ -212,6 +213,16 @@ async def firebase_login(db: _orm.Session, id_token: str):
     # Generate tokens
     return await create_tokens(db, db_user.user_id)
 
-async def get_user(db: _orm.Session, user_id:str):
-    db_user = db.query(_model.UserAuth).filter(_model.UserAuth.user_id == user_id).first()
-    return jsonable_encoder(db_user)
+def _get_user_auth_sync(user_id: str):
+    from database import SessionLocal
+
+    session = SessionLocal()
+    try:
+        db_user = session.query(_model.UserAuth).filter(_model.UserAuth.user_id == user_id).first()
+        return jsonable_encoder(db_user)
+    finally:
+        session.close()
+
+
+async def get_user(db: _orm.Session, user_id: str):
+    return await asyncio.to_thread(_get_user_auth_sync, user_id)

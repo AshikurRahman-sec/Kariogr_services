@@ -1,3 +1,6 @@
+import asyncio
+from typing import Optional
+
 import sqlalchemy.orm as _orm
 from sqlalchemy import select, func
 import uuid
@@ -211,39 +214,64 @@ async def get_workers_by_zone(db: _orm.Session, worker_id: str, district: str, s
     return worker_list, total_workers
 
 
-async def get_user_profile_by_user_id(user_id: str, db: _orm.Session):
+def _load_user_profile_for_kafka_sync(user_id: str):
+    """DB work in a worker thread so Kafka consumers can keep heartbeating on the event loop."""
+    from database import SessionLocal
+
+    session = SessionLocal()
+    try:
+        user_profile = (
+            session.query(_model.UserProfile)
+            .options(
+                _orm.joinedload(_model.UserProfile.address),
+                _orm.joinedload(_model.UserProfile.worker_profile),
+            )
+            .filter(_model.UserProfile.user_id == user_id)
+            .first()
+        )
+        return jsonable_encoder(user_profile)
+    finally:
+        session.close()
+
+
+async def get_user_profile_by_user_id(user_id: str, db: Optional[_orm.Session] = None):
     from kafka_producer_consumer import kafka_user_settings_service
 
-    user_profile = (
-        db.query(_model.UserProfile)
-        .options(
-            _orm.joinedload(_model.UserProfile.address),
-            _orm.joinedload(_model.UserProfile.worker_profile)
-        )
-        .filter(_model.UserProfile.user_id == user_id)
-        .first()
-    )
-    user_auth_info = await kafka_user_settings_service.get_user_auth_info('auth_info', user_id)
+    user_profile = await asyncio.to_thread(_load_user_profile_for_kafka_sync, user_id)
+    user_auth_info = await kafka_user_settings_service.get_user_auth_info("auth_info", user_id)
     return {
-            "user_profile": jsonable_encoder(user_profile),
-            "user_auth_info": jsonable_encoder(user_auth_info)
-        }
-
-async def get_worker_details_by_worker_id(worker_id: str, db: _orm.Session):
-    worker = (
-    db.query(_model.WorkerProfile, _model.UserProfile)
-    .join(_model.UserProfile, _model.UserProfile.profile_id == _model.WorkerProfile.worker_id)
-    .filter(_model.WorkerProfile.worker_id == worker_id)
-    .first()
-)   
-    worker_profile, user_profile = worker
-    #user_auth_info = await UserAndSettingsService.get_user_auth_info('auth_info', user_profile.user_id)
-
-    return {
-        "worker_profile": jsonable_encoder(worker_profile),
-        "user_profile": jsonable_encoder(user_profile),
-        #"user_auth_info": jsonable_encoder(user_auth_info)
+        "user_profile": user_profile,
+        "user_auth_info": jsonable_encoder(user_auth_info),
     }
+
+
+def _load_worker_details_sync(worker_id: str):
+    from database import SessionLocal
+
+    session = SessionLocal()
+    try:
+        row = (
+            session.query(_model.WorkerProfile, _model.UserProfile)
+            .join(
+                _model.UserProfile,
+                _model.UserProfile.profile_id == _model.WorkerProfile.worker_id,
+            )
+            .filter(_model.WorkerProfile.worker_id == worker_id)
+            .first()
+        )
+        if not row:
+            return None
+        worker_profile, user_profile = row
+        return {
+            "worker_profile": jsonable_encoder(worker_profile),
+            "user_profile": jsonable_encoder(user_profile),
+        }
+    finally:
+        session.close()
+
+
+async def get_worker_details_by_worker_id(worker_id: str, db: Optional[_orm.Session] = None):
+    return await asyncio.to_thread(_load_worker_details_sync, worker_id)
 
 async def create_or_update_worker_skill_rating(db: _orm.Session, request: _schemas.CreateWorkerSkillRatingRequest):
     # Check for existing rating

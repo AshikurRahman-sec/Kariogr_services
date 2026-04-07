@@ -2,15 +2,31 @@ import asyncio
 import json
 import uuid
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
-from database import get_db
 from services.auth_service import get_user
+
+_KAFKA_CONSUMER_COMMON = dict(
+    session_timeout_ms=45000,
+    heartbeat_interval_ms=15000,
+    max_poll_interval_ms=600000,
+    request_timeout_ms=120000,
+)
+
 
 class AuthService:
     def __init__(self, brokers: str, response_topics: list):
         self.brokers = brokers
         self.response_topics = response_topics
-        self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
-        self.consumer = AIOKafkaConsumer(*self.response_topics, bootstrap_servers=self.brokers, group_id="auth_group", auto_offset_reset="earliest")
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.brokers,
+            request_timeout_ms=120000,
+        )
+        self.consumer = AIOKafkaConsumer(
+            *self.response_topics,
+            bootstrap_servers=self.brokers,
+            group_id="auth_group",
+            auto_offset_reset="earliest",
+            **_KAFKA_CONSUMER_COMMON,
+        )
         self.pending_requests = {}
 
     async def start(self):
@@ -41,10 +57,7 @@ class AuthService:
                 request_id = request.get("request_id")
                 if request.get('request_type') == 'user_auth_info':
                     user_id = request.get("user_id")
-                    db_gen = get_db()
-                    db = next(db_gen)
-                    user_data = await get_user(db, user_id)  # Fetch user details
-                    db_gen.close()
+                    user_data = await get_user(None, user_id)
                     response = {"request_id": request_id, "user_data": user_data}
                     await self.producer.send_and_wait("user_request", json.dumps(response).encode("utf-8"))
                 elif request_id in self.pending_requests:

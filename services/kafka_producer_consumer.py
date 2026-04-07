@@ -3,11 +3,18 @@ import json
 import logging
 import uuid
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
-from database import get_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_KAFKA_CONSUMER_COMMON = dict(
+    session_timeout_ms=45000,
+    heartbeat_interval_ms=15000,
+    max_poll_interval_ms=600000,
+    request_timeout_ms=120000,
+)
+
 
 class ServiceService:
     def __init__(self, brokers: str, response_topics: list):
@@ -20,9 +27,12 @@ class ServiceService:
             bootstrap_servers=self.brokers,
             group_id="catalog_service_group",
             auto_offset_reset="earliest",
-            session_timeout_ms=30000,
+            **_KAFKA_CONSUMER_COMMON,
         )
-        self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.brokers,
+            request_timeout_ms=120000,
+        )
         self.pending_requests = {}
 
     async def start(self):
@@ -44,7 +54,6 @@ class ServiceService:
         print("Kafka Service is now READY.")
 
     async def process_requests(self):
-        from service import get_service_details
         print("Listening for Kafka messages...")
         async for msg in self.consumer:
             try:
@@ -52,10 +61,17 @@ class ServiceService:
                 print(f"DEBUG Kafka: Received message on {msg.topic}: {request}")
                 request_id = request.get("request_id")
                 if request.get('request_type') == 'service_details':
-                    db_gen = get_db()
-                    db = next(db_gen)
-                    service_data = get_service_details(db, request["service_id"])  # Fetch user details
-                    db_gen.close()
+                    def _load_service():
+                        from database import SessionLocal
+                        from service import get_service_details
+
+                        s = SessionLocal()
+                        try:
+                            return get_service_details(s, request["service_id"])
+                        finally:
+                            s.close()
+
+                    service_data = await asyncio.to_thread(_load_service)
                     response = {"request_id": request_id, "service_id": request["service_id"], "service_data": service_data}
                     await self.producer.send_and_wait("payment_response", json.dumps(response).encode("utf-8"))
                 elif request_id in self.pending_requests:

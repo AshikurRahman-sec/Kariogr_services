@@ -5,11 +5,19 @@ import uuid
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
 from services.user_service import get_user_profile_by_user_id, get_worker_details_by_worker_id
-from database import get_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Keep poll/heartbeat alive while handlers await other I/O (e.g. nested Kafka RPC).
+_KAFKA_CONSUMER_COMMON = dict(
+    session_timeout_ms=45000,
+    heartbeat_interval_ms=15000,
+    max_poll_interval_ms=600000,
+    request_timeout_ms=120000,
+)
+
 
 class UserAndSettingsService:
     def __init__(self, brokers: str):
@@ -19,16 +27,19 @@ class UserAndSettingsService:
             bootstrap_servers=self.brokers,
             group_id="user_service_group",
             auto_offset_reset="earliest",
-            session_timeout_ms=30000,
+            **_KAFKA_CONSUMER_COMMON,
         )
         self.internal_consumer = AIOKafkaConsumer(
             "user_request",  # topic for responses like 'user_auth_info'
             bootstrap_servers=self.brokers,
             group_id="user_internal_group",  # different group!
             auto_offset_reset="earliest",
-            session_timeout_ms=30000,
+            **_KAFKA_CONSUMER_COMMON,
         )
-        self.producer = AIOKafkaProducer(bootstrap_servers=self.brokers)
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.brokers,
+            request_timeout_ms=120000,
+        )
         self.pending_requests = {}
 
     async def start(self):
@@ -61,24 +72,22 @@ class UserAndSettingsService:
                 request = json.loads(msg.value.decode("utf-8"))
                 print(f"DEBUG Kafka External: Received message on {msg.topic}: {request}")
                 request_id = request.get("request_id")
-                if request.get('request_type') == 'user_details':
-                    db_gen = get_db()
-                    db = next(db_gen)
-                    user_data = await get_user_profile_by_user_id(request["user_id"], db)
-                    db_gen.close()
+                if request.get("request_type") == "user_details":
+                    user_data = await get_user_profile_by_user_id(request["user_id"], None)
                     response = {
                         "request_id": request_id,
                         "user_id": request["user_id"],
-                        "user_data": user_data
+                        "user_data": user_data,
                     }
                     await self.producer.send_and_wait("payment_response", json.dumps(response).encode("utf-8"))
 
-                if request.get('request_type') == 'worker_details':
-                    db_gen = get_db()
-                    db = next(db_gen)
-                    worker_data = await get_worker_details_by_worker_id(request["worker_id"], db)  # Fetch user details
-                    db_gen.close()
-                    response = {"request_id": request_id, "worker_id": request["worker_id"], "worker_data": worker_data}
+                elif request.get("request_type") == "worker_details":
+                    worker_data = await get_worker_details_by_worker_id(request["worker_id"], None)
+                    response = {
+                        "request_id": request_id,
+                        "worker_id": request["worker_id"],
+                        "worker_data": worker_data or {},
+                    }
                     await self.producer.send_and_wait("payment_response", json.dumps(response).encode("utf-8"))
             except Exception as e:
                 print(f"Error processing External Kafka message: {e}")
