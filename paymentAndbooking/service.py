@@ -10,7 +10,6 @@ import json
 
 from models import Booking, BookingType, BookingWorker, BookingWorkerSkill, WorkerAddonService, AddToBag, Payment, Coupon, CouponUsage, OfferService
 from schemas import BookingCreate, BookingResponse, WorkerSelection, AddToBagRequest, BookingConfirm, CreatePaymentRequest, ApplyCouponRequest, CouponInfoResponse
-import asyncio
 
 
 async def create_booking(db: Session, booking_data: BookingCreate) -> BookingResponse:
@@ -82,7 +81,9 @@ async def get_all_bookings(db: Session, skip: int = 0, limit: int = 10) -> List[
     result = db.execute(select(Booking).offset(skip).limit(limit))
     bookings = result.scalars().all()
 
-    names_list = await asyncio.gather(*[fetch_names(b) for b in bookings])
+    names_list = []
+    for b in bookings:
+        names_list.append(await fetch_names(b))
     return [
         BookingResponse.from_orm_custom(
             booking,
@@ -116,13 +117,13 @@ async def get_bookings_by_worker(db: Session, worker_id: str, skip: int = 0, lim
     # Apply pagination
     result = db.execute(query.offset(skip).limit(limit))
     bookings = result.scalars().all()
-    
-    # Fetch names for all bookings in parallel
-    tasks = [fetch_names(booking) for booking in bookings]
-    names_list = await asyncio.gather(*tasks)
-    
+
+    names_list = []
+    for booking in bookings:
+        names_list.append(await fetch_names(booking))
+
     booking_responses = []
-    for booking, (service_name, user_name) in zip(bookings, names_list):
+    for booking, (user_name, service_name) in zip(bookings, names_list):
         booking_responses.append(BookingResponse.from_orm_custom(booking, service_name=service_name, user_name=user_name))
     
     return {
